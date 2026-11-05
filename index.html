@@ -300,6 +300,15 @@ function fmtFtIn(v){
   let i=Math.floor(t/16),n=t%16,d=16;while(n&&n%2===0){n/=2;d/=2;}
   return (v<0?'-':'')+f+'-'+i+(n?'-'+n+'/'+d:'');
 }
+/* inches entry: 5-1/2 = 5½″, 1-6 = 1′6″ = 18″, 1-6-1/2 = 18½″ */
+function parseIn(s){
+  s=String(s).trim().replace(/[″"]/g,'').replace(/[′']/g,'-');
+  if(!s)return NaN;
+  const p=s.split('-').filter(x=>x!=='');
+  if(p.length===1)return evalInch(p[0]);
+  if(p.length===2&&p[1].includes('/'))return Number(p[0])+evalFrac(p[1]);
+  return parseLen(s,'ft')*12;
+}
 function parseSta(s){s=String(s).trim();if(!s)return NaN;if(s.includes('+')){const neg=s[0]==='-';return (neg?-1:1)*Number(s.replace(/^-/,'').replace('+',''));}return Number(s);}
 function fmtSta(n){if(!Number.isFinite(n))return '—';const neg=n<0;const r=Math.round(Math.abs(n)*100)/100;const w=Math.floor(r/100);return (neg?'-':'')+w+'+'+(r-w*100).toFixed(2).padStart(5,'0');}
 function parseDMS(s){s=String(s).trim();if(!s)return NaN;const neg=s[0]==='-';const p=s.replace(/^-/,'').split(/[^0-9.]+/).filter(Boolean).map(Number);if(!p.length)return NaN;return (neg?-1:1)*(p[0]+(p[1]||0)/60+(p[2]||0)/3600);}
@@ -570,7 +579,7 @@ const VOL={
 };
 
 const UNITS={in:{f:0.0254,imp:1,a:'in'},ft:{f:0.3048,imp:1,a:'ft'},yd:{f:0.9144,imp:1,a:'yd'},mm:{f:0.001,a:'mm'},cm:{f:0.01,a:'cm'},m:{f:1,a:'m'}};
-const HINTS={in:'Inches. Accepts 5-1/2, 5 1/2 or decimal.',ft:'Feet. Accepts 5-10 (5′10″), 6-4-1/2, or decimal feet.',yd:'Yards, decimal.',mm:'Millimetres, decimal.',cm:'Centimetres, decimal.',m:'Metres, decimal.'};
+const HINTS={in:'Inches. 5-1/2 or 5 1/2 = 5½″; 1-6 = 1′6″ = 18″; 1-6-1/2 = 18½″; or decimal.',ft:'Feet. Accepts 5-10 (5′10″), 6-4-1/2, or decimal feet.',yd:'Yards, decimal.',mm:'Millimetres, decimal.',cm:'Centimetres, decimal.',m:'Metres, decimal.'};
 function setupShapes(pre,DEF,isVol){
   const sel=$(pre+'Shape'),usel=$(pre+'Unit');
   sel.innerHTML=Object.entries(DEF).map(([k,d])=>`<option value="${k}">${d.n}</option>`).join('');
@@ -588,7 +597,7 @@ function setupShapes(pre,DEF,isVol){
   const calc=()=>{
     const d=DEF[sel.value],u=usel.value,U=UNITS[u],v={};let bad=false;
     d.f.forEach(([k,,,t])=>{const el=$(`${pre}_${sel.value}_${k}`);
-      const x=t?Number(el.value):(u==='in'?evalInch(el.value.replace(/-/g,' ')):parseLen(el.value,u));
+      const x=t?Number(el.value):(u==='in'?parseIn(el.value):parseLen(el.value,u));
       const good=Number.isFinite(x)&&x>0;el.classList.toggle('err',!good);if(!good)bad=true;v[k]=t?x:x*U.f;store[el.id]=el.value;});
     save();
     const out=$(pre+'Res');
@@ -672,7 +681,7 @@ function calcTR(){
   const u=$('trUnit').value,ua=UNITS[u].a,k={},given=new Set();let bad=false;
   TS.forEach(s=>{const el=$('tr_'+s),raw=el.value.trim();store[el.id]=el.value;
     if(!raw){el.classList.remove('err');return;}
-    const x=u==='in'?evalInch(raw.replace(/-/g,' ')):parseLen(raw,u),good=Number.isFinite(x)&&x>0;
+    const x=u==='in'?parseIn(raw):parseLen(raw,u),good=Number.isFinite(x)&&x>0;
     el.classList.toggle('err',!good);if(good){k[s]=x;given.add(s);}else bad=true;});
   ['A','B','C'].forEach(a=>{const el=$('tr_'+a),raw=el.value.trim();store[el.id]=el.value;
     if(!raw){el.classList.remove('err');return;}
