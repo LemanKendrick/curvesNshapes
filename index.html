@@ -130,7 +130,7 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
 <body>
 
 <header class="top"><div class="wrap">
-  <div class="brand"><span class="mark">curves<b>N</b>shapes</span><span class="beta">BETA</span></div>
+  <div class="brand"><span class="mark">curves<b>N</b>shapes</span><span class="beta" id="appVer">v2</span></div>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="hcurve">H-Curve</button>
     <button role="tab" data-tab="vcurve">V-Curve</button>
@@ -277,10 +277,13 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
 </section>
 
 </main>
-<footer class="wrap">Beta layout · inputs are saved on this device · feet-inch entry: 5-10 or 6-4-1/2</footer>
+<footer class="wrap"><span id="appVerFoot">curvesNshapes v2</span> · inputs are saved on this device · feet-inch entry: 5-10 or 6-4-1/2</footer>
 
 <script>
 const $=id=>document.getElementById(id);
+/* App version: change here, and set the same number in sw.js (cns-vN) */
+const APP_VERSION='2';
+$('appVer').textContent='v'+APP_VERSION;$('appVerFoot').textContent='curvesNshapes v'+APP_VERSION;
 const D2R=Math.PI/180;
 const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 

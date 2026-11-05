@@ -25,4 +25,6 @@ icons/
 ```
 
 ## Updating
-Edit `index.html`, then bump `VERSION` in `sw.js` (e.g. `cns-v2`) so installed copies refresh their offline cache.
+Edit `index.html`, then raise the version in two places so installed copies refresh:
+- `APP_VERSION` near the top of the script in `index.html` (shown in the header and footer), e.g. `'3'`
+- `VERSION` in `sw.js`, e.g. `'cns-v3'`
