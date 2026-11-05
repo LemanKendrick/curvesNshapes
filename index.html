@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Horizontal and vertical curve solver, triangle solver, and area and volume calculator.">
+<meta name="theme-color" content="#1c2930">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="curvesNshapes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+body{margin:0;font-size:14px;font-family:system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>curvesNshapes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: field-book tool — sticky tab bar, inputs column left, results + sketch right, stakeout table full width; stacks at phone width */
+:root{
+  --bg:#e9efed; --paper:#fbfcfb; --ink:#1c2930; --muted:#5a6a6f; --line:#c8d3cf; --grid:rgba(31,111,139,.07);
+  --accent:#d9531a; --accent-soft:#fbe6dc; --curve:#1f6f8b; --bad:#b3261e;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif; --body:"Barlow",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10171a; --paper:#172125; --ink:#e2eae7; --muted:#8c9d9a; --line:#2b3a3f; --grid:rgba(95,179,207,.06);
+  --accent:#ff7a3d; --accent-soft:#3a2418; --curve:#5fb3cf; --bad:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10171a; --paper:#172125; --ink:#e2eae7; --muted:#8c9d9a; --line:#2b3a3f; --grid:rgba(95,179,207,.06);
+  --accent:#ff7a3d; --accent-soft:#3a2418; --curve:#5fb3cf; --bad:#ff8a80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.mark{font:700 1.7rem/1 var(--display);letter-spacing:.01em}
+.mark b{color:var(--accent)}
+.beta{font:500 .68rem var(--mono);letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);padding:1px 6px;border-radius:3px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{font:600 1.05rem var(--display);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;padding:6px 10px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+.tabs button:hover{color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:20px 48px}
+.panel{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:16px;align-items:start}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-width:0}
+@media (max-width:900px){.out{grid-template-columns:1fr}}
+@media (max-width:720px){.grid{grid-template-columns:1fr}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+h2{font:700 1.25rem/1.1 var(--display);letter-spacing:.03em;text-transform:uppercase;margin:0 0 12px}
+h3{font:600 .78rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.fields{display:flex;flex-direction:column;gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:500;color:var(--muted)}
+label small{font:400 .72rem var(--mono);color:var(--muted);opacity:.85}
+input,select{font:500 1.05rem var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 10px;width:100%;min-width:0}
+input.err{border-color:var(--bad)}
+.kv{display:flex;flex-direction:column;gap:4px}
+.kl{font-size:.85rem;font-weight:500;color:var(--muted)}
+.given{font:500 .62rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--curve);border:1px solid var(--curve);border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:1px}
+.solpick{margin-bottom:12px}
+.solpick p{font-size:.85rem;color:var(--muted);margin:0 0 6px}
+.appear{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.appear .seg button{padding:4px 10px;font-size:.8rem}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.colbtn{display:flex;align-items:center;gap:6px;font:600 .8rem var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+.colbtn .dots{display:flex}.colbtn .d1{background:var(--accent)}.colbtn .d2{background:var(--curve)}.colbtn .d3{background:var(--accent-soft)}.colbtn i{width:10px;height:10px;border-radius:50%;margin-right:-3px;border:1px solid var(--paper)}
+.top .colpanel{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;max-height:70vh;overflow-y:auto;gap:12px;padding-block:12px 16px;border-top:1px dashed var(--line)}
+.top .colpanel[hidden]{display:none!important}
+.colhead,.colfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.colhead span{font:700 1rem var(--display);letter-spacing:.04em;text-transform:uppercase}
+.colrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.colgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px 16px}
+.colgrid label{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.colgrid input[type=color]{width:38px;height:30px;padding:2px;flex:none;cursor:pointer}
+.linkbtn{background:none;border:0;color:var(--accent);font:600 .85rem var(--body);cursor:pointer;padding:4px 0}
+.sw{width:22px;height:22px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 0 0 1px var(--line);padding:0;cursor:pointer}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
+html,html *{forced-color-adjust:none}
+[hidden]{display:none!important}
+.trgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.trbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.trcount{font:500 .78rem var(--mono);color:var(--muted)}
+.trcount b{color:var(--accent);font-weight:600}
+.trout{grid-template-columns:1fr}
+svg [data-f]{cursor:pointer}
+#trSvg{max-height:360px}
+svg .ref{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:6 5}
+svg .arc{fill:none;stroke:var(--curve);stroke-width:1.5}
+svg .vtx{fill:var(--ink);font:700 14px var(--display)}
+svg .unk{fill:var(--muted);font:500 12px var(--mono);opacity:.8}
+.hint{font-size:.8rem;color:var(--muted);margin:4px 0 0}
+dl.res{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-variant-numeric:tabular-nums}
+dl.res dt{color:var(--muted);font-size:.88rem;align-self:baseline}
+dl.res dd{margin:0;font:500 1rem var(--mono);text-align:right;align-self:baseline;overflow-wrap:anywhere}
+dl.res dd.key{color:var(--accent);font-size:1.15rem}
+dl.res .sep{grid-column:1/-1;border-top:1px dashed var(--line);margin:2px 0}
+.msg{color:var(--bad);font-size:.9rem}
+svg.sk{width:100%;height:auto;display:block}
+svg .t{fill:var(--muted);font:500 11px var(--mono)}
+svg .tk{fill:var(--accent);font:600 12px var(--mono)}
+svg .c{fill:none;stroke:var(--curve);stroke-width:2.5}
+svg .tan{fill:none;stroke:var(--muted);stroke-width:1.2}
+svg .dash{stroke-dasharray:5 4}
+svg .dot{stroke-dasharray:2 3}
+svg .pt{fill:var(--accent)}
+svg .shape{fill:var(--accent-soft);stroke:var(--curve);stroke-width:2}
+.tscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font:14px var(--mono);font-variant-numeric:tabular-nums}
+th{font:600 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{text-align:right;padding:5px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr.key td{color:var(--accent);font-weight:500}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{flex:1;font:600 .9rem var(--display);letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--muted);border:0;padding:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <div class="brand"><span class="mark">curves<b>N</b>shapes</span><span class="beta">BETA</span></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="hcurve">H-Curve</button>
+    <button role="tab" data-tab="vcurve">V-Curve</button>
+    <button role="tab" data-tab="area">Area</button>
+    <button role="tab" data-tab="volume">Volume</button>
+    <button role="tab" data-tab="triangle">Triangle</button>
+  </nav>
+  <div class="appear">
+    <div class="seg" id="themeSeg" role="group" aria-label="Appearance"><button type="button" data-th="auto">Auto</button><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button></div>
+    <button type="button" class="colbtn" id="colBtn" aria-expanded="false" aria-controls="colPanel"><span class="dots"><i class="d1"></i><i class="d2"></i><i class="d3"></i></span>Colours</button>
+  </div>
+</div>
+<div class="wrap colpanel" id="colPanel" hidden>
+  <div class="colhead"><span id="colTitle">Light theme colours</span><button type="button" class="linkbtn" id="colClose">Done</button></div>
+  <div class="colrow"><span class="kl">Presets</span><div class="swatches" id="accentSw" role="group" aria-label="Colour presets"></div></div>
+  <div class="colgrid" id="colGrid"></div>
+  <div class="colfoot"><span class="hint">Changes apply to the current theme only. Switch Light/Dark to set the other.</span><button type="button" class="linkbtn" id="colReset">Reset this theme</button></div>
+</div></header>
+
+<main class="wrap">
+
+<!-- HORIZONTAL CURVE -->
+<section class="panel" id="p-hcurve" hidden>
+  <div class="grid">
+    <form class="card fields" onsubmit="return false">
+      <h2>Horizontal curve</h2>
+      <label>Units<select id="hcUnit" data-save><optgroup label="Imperial"><option value="ft">Feet</option><option value="in">Decimal inches</option></optgroup><optgroup label="Metric"><option value="m">Metres</option><option value="mm">Millimetres</option></optgroup></select></label>
+      <div class="kv"><span class="kl">Known value 1</span>
+        <div class="row2"><select id="hcK1" data-save aria-label="Known value 1 type"><option value="dl" selected>Δ delta</option><option value="R">R radius</option><option value="D">D degree</option><option value="T">T tangent</option><option value="L">L length</option><option value="LC">LC long chord</option><option value="E">E external</option><option value="M">M mid-ord.</option></select>
+        <input id="hcV1" data-save value="34-15-20" aria-label="Known value 1"></div></div>
+      <div class="kv"><span class="kl">Known value 2</span>
+        <div class="row2"><select id="hcK2" data-save aria-label="Known value 2 type"><option value="dl">Δ delta</option><option value="R" selected>R radius</option><option value="D">D degree</option><option value="T">T tangent</option><option value="L">L length</option><option value="LC">LC long chord</option><option value="E">E external</option><option value="M">M mid-ord.</option></select>
+        <input id="hcV2" data-save value="1200" aria-label="Known value 2"></div></div>
+      <div class="fields" id="hcSurvey">
+      <div class="row2">
+        <label>Station of<select id="hcRef" data-save><option>PI</option><option>PC</option><option>PT</option></select></label>
+        <label>Station<input id="hcPI" data-save value="45+67.89"></label>
+      </div>
+      <div class="row2">
+        <label>Turn<select id="hcDir" data-save><option value="R">Right</option><option value="L">Left</option></select></label>
+        <label>Stake interval<select id="hcInt" data-save><option>25</option><option selected>50</option><option>100</option></select></label>
+      </div>
+      </div>
+      <div class="fields" id="hcShop" hidden>
+        <div class="row2">
+          <label>Offsets from<select id="hcOffRef" data-save><option value="chord">Long chord</option><option value="tan">Tangent</option></select></label>
+          <label>Mark every<select id="hcShopInt"></select></label>
+        </div>
+        <div class="row2">
+          <label id="hcFracLbl">Round to<select id="hcFrac" data-save><option value="16">1/16″</option><option value="32">1/32″</option></select></label>
+          <label>Extra stock length<input id="hcTrim" data-save value="0" inputmode="decimal"></label>
+        </div>
+      </div>
+      <p class="hint" id="hcHint">Pick any two of Δ, R, D, T, L, LC, E, M. Angles in d-m-s; lengths and stations in the selected unit. D uses the 100-ft arc definition (D = 5729.578 / R), so it is available in feet only.</p>
+    </form>
+    <div class="out">
+      <div class="card"><h3>Curve data</h3><div id="hcRes"></div></div>
+      <div class="card"><h3>Sketch</h3><svg class="sk" id="hcSvg" viewBox="0 0 320 230" role="img" aria-label="Horizontal curve sketch"></svg></div>
+    </div>
+  </div>
+  <div class="card"><h3 id="hcTblTitle">Stakeout — deflections from PC</h3><div class="tscroll"><table id="hcTbl"></table></div></div>
+</section>
+
+<!-- VERTICAL CURVE -->
+<section class="panel" id="p-vcurve" hidden>
+  <div class="grid">
+    <form class="card fields" onsubmit="return false">
+      <h2>Vertical curve</h2>
+      <div class="row2">
+        <label>g₁ (%)<input id="vcG1" data-save value="2.5" inputmode="decimal"></label>
+        <label>g₂ (%)<input id="vcG2" data-save value="-1.8" inputmode="decimal"></label>
+      </div>
+      <label>Curve length L (ft)<input id="vcL" data-save value="400" inputmode="decimal"></label>
+      <div class="row2">
+        <label>PVI station<input id="vcPVI" data-save value="62+00"></label>
+        <label>PVI elev.<input id="vcEl" data-save value="1847.25" inputmode="decimal"></label>
+      </div>
+      <label>Table interval<select id="vcInt" data-save><option>25</option><option selected>50</option><option>100</option></select></label>
+      <p class="hint">Symmetric parabolic curve. Grades in percent, + is uphill ahead.</p>
+    </form>
+    <div class="out">
+      <div class="card"><h3>Curve data</h3><div id="vcRes"></div></div>
+      <div class="card"><h3>Profile sketch</h3><svg class="sk" id="vcSvg" viewBox="0 0 320 210" role="img" aria-label="Vertical curve profile"></svg></div>
+    </div>
+  </div>
+  <div class="card"><h3>Elevations</h3><div class="tscroll"><table id="vcTbl"></table></div></div>
+</section>
+
+<!-- AREA -->
+<section class="panel" id="p-area" hidden>
+  <div class="grid">
+    <form class="card fields" onsubmit="return false">
+      <h2>Area</h2>
+      <label>Shape<select id="arShape" data-save></select></label>
+      <label>Units<select id="arUnit"><optgroup label="Imperial"><option value="in">Inches</option><option value="ft" selected>Feet</option><option value="yd">Yards</option></optgroup><optgroup label="Metric"><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="m">Metres</option></optgroup></select></label>
+      <div class="fields" id="arFields"></div>
+      <p class="hint" id="arHint"></p>
+    </form>
+    <div class="out">
+      <div class="card"><h3>Results</h3><div id="arRes"></div></div>
+      <div class="card"><h3>Shape</h3><svg class="sk" id="arSvg" viewBox="0 0 200 130" role="img" aria-label="Shape diagram"></svg></div>
+    </div>
+  </div>
+</section>
+
+<!-- VOLUME -->
+<section class="panel" id="p-volume" hidden>
+  <div class="grid">
+    <form class="card fields" onsubmit="return false">
+      <h2>Volume</h2>
+      <label>Shape<select id="voShape" data-save></select></label>
+      <label>Units<select id="voUnit"><optgroup label="Imperial"><option value="in">Inches</option><option value="ft" selected>Feet</option><option value="yd">Yards</option></optgroup><optgroup label="Metric"><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="m">Metres</option></optgroup></select></label>
+      <div class="fields" id="voFields"></div>
+      <label>Waste % <small>0 hides the waste line</small><input id="voWaste" data-save value="10" inputmode="decimal"></label>
+      <p class="hint" id="voHint"></p>
+    </form>
+    <div class="out">
+      <div class="card"><h3>Results</h3><div id="voRes"></div></div>
+      <div class="card"><h3>Shape</h3><svg class="sk" id="voSvg" viewBox="0 0 200 130" role="img" aria-label="Solid diagram"></svg></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRIANGLE -->
+<section class="panel" id="p-triangle" hidden>
+  <div class="grid">
+    <form class="card fields" onsubmit="return false">
+      <h2>Triangle</h2>
+      <label>Units<select id="trUnit" data-save><optgroup label="Imperial"><option value="in">Inches</option><option value="ft" selected>Feet</option><option value="yd">Yards</option></optgroup><optgroup label="Metric"><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="m">Metres</option></optgroup></select></label>
+      <div class="trgrid">
+        <span class="kl">Sides</span><span class="kl">Angles (d-m-s)</span>
+        <label>Side a<input id="tr_a" data-save value=""></label><label>Angle A<input id="tr_A" data-save value="40"></label>
+        <label>Side b<input id="tr_b" data-save value="8"></label><label>Angle B<input id="tr_B" data-save value=""></label>
+        <label>Side c<input id="tr_c" data-save value="10"></label><label>Angle C<input id="tr_C" data-save value=""></label>
+      </div>
+      <div class="trbar"><span class="trcount" id="trCount"></span><button type="button" class="linkbtn" id="trClear">Clear all</button></div>
+      <p class="hint" id="trHint">Enter any three values, including at least one side. Side a is opposite angle A. Tap a label on the sketch to jump to its field.</p>
+    </form>
+    <div class="out trout">
+      <div class="card trsk"><h3>Sketch</h3><svg class="sk" id="trSvg" viewBox="0 0 400 280" role="img" aria-label="Triangle sketch"></svg><p class="hint" id="trSkNote"></p></div>
+      <div class="card"><h3>Results</h3><div id="trRes"></div></div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="wrap">Beta layout · inputs are saved on this device · feet-inch entry: 5-10 or 6-4-1/2</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const D2R=Math.PI/180;
+const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+
+/* ---------- parsing / formatting ---------- */
+function evalFrac(s){s=s.trim();if(!s)return 0;if(s.includes('/')){const[a,b]=s.split('/');return Number(a)/Number(b);}return Number(s);}
+function evalInch(s){return s.trim().split(/\s+/).reduce((t,p)=>t+evalFrac(p),0);}
+function parseLen(s,unit){
+  s=String(s).trim().replace(/[′']/g,'-').replace(/[″"]/g,'');
+  if(!s)return NaN;
+  if(unit!=='ft'||!s.includes('-'))return s.includes('/')?evalInch(s):Number(s);
+  const p=s.split('-').filter(x=>x!=='');
+  return Number(p[0])+((p[1]?evalInch(p[1]):0)+(p[2]?evalFrac(p[2]):0))/12;
+}
+function fmtFtIn(v){
+  if(!Number.isFinite(v))return '';
+  let t=Math.round(Math.abs(v)*192),f=Math.floor(t/192);t-=f*192;
+  let i=Math.floor(t/16),n=t%16,d=16;while(n&&n%2===0){n/=2;d/=2;}
+  return (v<0?'-':'')+f+'-'+i+(n?'-'+n+'/'+d:'');
+}
+function parseSta(s){s=String(s).trim();if(!s)return NaN;if(s.includes('+')){const neg=s[0]==='-';return (neg?-1:1)*Number(s.replace(/^-/,'').replace('+',''));}return Number(s);}
+function fmtSta(n){if(!Number.isFinite(n))return '—';const neg=n<0;const r=Math.round(Math.abs(n)*100)/100;const w=Math.floor(r/100);return (neg?'-':'')+w+'+'+(r-w*100).toFixed(2).padStart(5,'0');}
+function parseDMS(s){s=String(s).trim();if(!s)return NaN;const neg=s[0]==='-';const p=s.replace(/^-/,'').split(/[^0-9.]+/).filter(Boolean).map(Number);if(!p.length)return NaN;return (neg?-1:1)*(p[0]+(p[1]||0)/60+(p[2]||0)/3600);}
+function fmtDMS(deg,dp=0){
+  if(!Number.isFinite(deg))return '—';
+  const k=10**dp;let T=Math.round(Math.abs(deg)*3600*k);
+  const d=Math.floor(T/(3600*k));T-=d*3600*k;const m=Math.floor(T/(60*k));T-=m*60*k;
+  return (deg<0?'-':'')+d+'°'+String(m).padStart(2,'0')+'′'+(T/k).toFixed(dp).padStart(dp?3+dp:2,'0')+'″';
+}
+function resList(rows){
+  return '<dl class="res">'+rows.map(r=>r==='-'?'<div class="sep"></div>':`<dt>${r[0]}${r[3]?'<span class="given">given</span>':''}</dt><dd${r[2]?' class="key"':''}>${r[1]}</dd>`).join('')+'</dl>';
+}
+const msg=t=>`<p class="msg">${t}</p>`;
+
+/* ---------- storage ---------- */
+let store={};
+try{store=JSON.parse(localStorage.getItem('cns_v1')||'{}')||{};}catch(e){store={};}
+function save(){try{localStorage.setItem('cns_v1',JSON.stringify(store));}catch(e){}}
+document.querySelectorAll('[data-save]').forEach(el=>{if(store[el.id]!=null&&!el.id.endsWith('Shape'))el.value=store[el.id];});
+
+/* ---------- horizontal curve ---------- */
+/* Each curve element = R × k(h), h = Δ/2 in radians */
+const HK={T:h=>Math.tan(h),L:h=>2*h,LC:h=>2*Math.sin(h),E:h=>1/Math.cos(h)-1,M:h=>1-Math.cos(h)};
+function rootsH(g,target){
+  const lo=1e-7,hi=Math.PI/2-1e-7,N=4000,out=[];
+  let h0=lo,f0=g(lo)-target;
+  for(let i=1;i<=N;i++){
+    const h1=lo+(hi-lo)*i/N,f1=g(h1)-target;
+    if(Number.isFinite(f0)&&Number.isFinite(f1)&&(f0===0||f0*f1<0)){
+      let a=h0,b=h1,fa=f0;
+      for(let j=0;j<80;j++){const c=(a+b)/2,fc=g(c)-target;if(fa*fc<=0)b=c;else{a=c;fa=fc;}}
+      const r=(a+b)/2;if(!out.some(x=>Math.abs(x-r)<1e-6))out.push(r);
+    }
+    h0=h1;f0=f1;
+  }
+  return out;
+}
+function solveHC(a,va,b,vb){
+  if(a==='D'){a='R';va=5729.578/va;} if(b==='D'){b='R';vb=5729.578/vb;}
+  if(a===b)return {err:a==='R'?'R and D describe the same thing — pick a different second value.':'Pick two different values.'};
+  if(b==='dl'||(b==='R'&&a!=='dl')){[a,b]=[b,a];[va,vb]=[vb,va];}   // order: dl first, else R first
+  if(a==='dl'){
+    if(!(va<180))return {err:'Δ must be less than 180°.'};
+    const h=va*D2R/2;return {sols:[{h,R:b==='R'?vb:vb/HK[b](h)}]};
+  }
+  if(a==='R')return {sols:rootsH(HK[b],vb/va).map(h=>({h,R:va}))};
+  return {sols:rootsH(h=>HK[a](h)/HK[b](h),va/vb).map(h=>({h,R:va/HK[a](h)}))};
+}
+function fmtFrac(v,den){const neg=v<0;const t=Math.round(Math.abs(v)*den);const w=Math.floor(t/den);let n=t%den,d=den;while(n&&n%2===0){n/=2;d/=2;}
+  return (neg?'-':'')+(w||!n?w:'')+(w&&n?'-':'')+(n?n+'/'+d:'')+'″';}
+const SHOP_INT={in:[['0.5','½″'],['1','1″'],['2','2″'],['3','3″'],['6','6″'],['12','12″']],mm:[['10','10 mm'],['25','25 mm'],['50','50 mm'],['100','100 mm']]};
+const SURVEY_HINT='Pick any two of Δ, R, D, T, L, LC, E, M. Angles in d-m-s; lengths and stations in the selected unit. D uses the 100-ft arc definition (D = 5729.578 / R), so it is available in feet only.';
+const SHOP_HINT='Shop mode. Pick any two of Δ, R, T, L, LC, E, M (span + rise = LC + M). Long chord: measure along the chord from one end and square up to the arc. Tangent: measure along a straight edge from where the curve starts and square out.';
+let hcShopUnit=null;
+function calcHC(){
+  const k1=$('hcK1').value,k2=$('hcK2').value,isAng=k=>k==='dl'||k==='D';
+  const un=$('hcUnit').value,isFt=un==='ft',shop=un==='in'||un==='mm',uName={ft:'feet',in:'inches',m:'metres',mm:'millimetres'}[un],us=' '+un;
+  $('hcSurvey').hidden=shop;$('hcShop').hidden=!shop;$('hcFracLbl').hidden=un!=='in';
+  $('hcHint').textContent=shop?SHOP_HINT:SURVEY_HINT;
+  if(shop&&hcShopUnit!==un){
+    $('hcShopInt').innerHTML=SHOP_INT[un].map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
+    $('hcShopInt').value=store['hcShopInt_'+un]||(un==='in'?'1':'25');hcShopUnit=un;
+  }
+  $('hcV1').placeholder=isAng(k1)?'d-m-s':uName;$('hcV2').placeholder=isAng(k2)?'d-m-s':uName;
+  const v1=isAng(k1)?parseDMS($('hcV1').value):Number($('hcV1').value);
+  const v2=isAng(k2)?parseDMS($('hcV2').value):Number($('hcV2').value);
+  const sta=parseSta($('hcPI').value),iv=Number($('hcInt').value);
+  $('hcV1').classList.toggle('err',!(v1>0));$('hcV2').classList.toggle('err',!(v2>0));
+  $('hcPI').classList.toggle('err',!shop&&!Number.isFinite(sta));
+  const fail=t=>{$('hcRes').innerHTML=msg(t);$('hcTbl').innerHTML='';$('hcSvg').innerHTML='';};
+  if(!(v1>0)||!(v2>0))return fail('Enter two positive known values.');
+  if(!shop&&!Number.isFinite(sta))return fail('Enter a station.');
+  if(!isFt&&(k1==='D'||k2==='D')){$('hcV'+(k1==='D'?1:2)).classList.add('err');return fail('D (arc) uses the 100-ft arc definition. Switch units to feet, or pick another known value.');}
+  const sv=solveHC(k1,v1,k2,v2);
+  if(sv.err)return fail(sv.err);
+  if(!sv.sols.length)return fail('No curve fits those two values (Δ must be under 180°). Check the numbers.');
+  let si=Math.min(store.hcSol|0,sv.sols.length-1);
+  const {h,R}=sv.sols[si],dl=2*h/D2R;
+  const T=R*Math.tan(h),L=R*2*h,LC=2*R*Math.sin(h),E=R*(1/Math.cos(h)-1),M=R*(1-Math.cos(h));
+  const g=k=>k===k1||k===k2;
+  const pick=sv.sols.length>1?`<div class="solpick"><p>Two curves fit these values:</p><div class="seg">`+
+    sv.sols.map((s,i)=>`<button type="button" data-sol="${i}" aria-pressed="${i===si}">Δ ${fmtDMS(2*s.h/D2R)}</button>`).join('')+'</div></div>':'';
+  if(shop){calcShop(pick,{dl,R,T,L,LC,E,M,h},g,un);return;}
+  const ref=$('hcRef').value,PC=ref==='PI'?sta-T:ref==='PC'?sta:sta-L,pi=PC+T,PT=PC+L;
+  $('hcRes').innerHTML=pick+resList([
+    ['Δ',fmtDMS(dl,1),0,g('dl')],['R',fmt(R)+us,0,g('R')],['D (arc)',isFt?fmtDMS(5729.578/R,1):'not computed',0,g('D')],'-',
+    ['Tangent T',fmt(T)+us,0,g('T')],['Length L',fmt(L)+us,0,g('L')],['Long chord',fmt(LC)+us,0,g('LC')],['External E',fmt(E)+us,0,g('E')],['Mid-ordinate M',fmt(M)+us,0,g('M')],'-',
+    ['PC',fmtSta(PC),1],['PI',fmtSta(pi)],['PT',fmtSta(PT),1]]);
+  $('hcTblTitle').textContent='Stakeout — deflections from PC';$('hcTblNote')?.remove();
+  const st=[PC];let s=Math.ceil(PC/iv)*iv;if(Math.abs(s-PC)<1e-6)s+=iv;
+  while(s<PT-1e-6&&st.length<400){st.push(s);s+=iv;}st.push(PT);
+  let rows='',prev=0;
+  st.forEach((sta,i)=>{
+    const a=sta-PC,df=a/(2*R)/D2R,ch=2*R*Math.sin(a/(2*R)),sub=2*R*Math.sin((a-prev)/(2*R));
+    const lab=i===0?' PC':i===st.length-1?' PT':'';
+    rows+=`<tr${lab?' class="key"':''}><td>${fmtSta(sta)}${lab}</td><td>${fmt(a)}</td><td>${fmtDMS(df,1)}</td><td>${fmt(ch)}</td><td>${i?fmt(sub):'—'}</td></tr>`;
+    prev=a;
+  });
+  $('hcTbl').innerHTML='<thead><tr><th>Station</th><th>Arc from PC</th><th>Deflection</th><th>Chord from PC</th><th>Sub-chord</th></tr></thead><tbody>'+rows+'</tbody>';
+  drawHC(R,dl,T,$('hcDir').value);
+}
+function calcShop(pick,c,g,un){
+  const inch=un==='in',den=Number($('hcFrac').value);
+  const F=x=>inch?`${fmt(x,3)} in · ${fmtFrac(x,den)}`:`${fmt(x,1)} mm`;
+  const trim=Number($('hcTrim').value);const trimOk=$('hcTrim').value.trim()!==''&&trim>=0;
+  $('hcTrim').classList.toggle('err',!trimOk);
+  const rows=[['Δ',fmtDMS(c.dl,1),0,g('dl')],['Radius R',F(c.R),1,g('R')],'-',
+    ['Span (long chord)',F(c.LC),0,g('LC')],['Rise (mid-ordinate)',F(c.M),0,g('M')],['Arc length L',F(c.L),0,g('L')],
+    ['Tangent T',F(c.T),0,g('T')],['External E',F(c.E),0,g('E')],'-',
+    ['Stock length',trimOk?F(c.L+trim):'—',1]];
+  $('hcRes').innerHTML=pick+resList(rows);
+  // offsets table
+  const iv=Number($('hcShopInt').value),mode=$('hcOffRef').value,R=c.R,pts=[];
+  let end,off;
+  if(mode==='chord'){end=c.LC;const cm=R-c.M;off=d=>{const x=d-c.LC/2;return Math.sqrt(Math.max(0,R*R-x*x))-cm;};}
+  else{end=c.dl<=90?R*Math.sin(2*c.h):R;off=x=>R-Math.sqrt(Math.max(0,R*R-x*x));}
+  for(let d=0;d<end-1e-9&&pts.length<400;d+=iv)pts.push({d});
+  pts.push({d:end,tag:mode==='chord'?'end':(c.dl<=90?'curve end':'quarter point')});
+  pts[0].tag='start';
+  if(mode==='chord'&&!pts.some(p=>Math.abs(p.d-c.LC/2)<1e-9))pts.push({d:c.LC/2,tag:'centre'});
+  else if(mode==='chord')pts.find(p=>Math.abs(p.d-c.LC/2)<1e-9).tag='centre';
+  pts.sort((a,b)=>a.d-b.d);
+  const alongH=mode==='chord'?'Along chord':'Along tangent',offH=mode==='chord'?'Up to arc':'Out to arc';
+  $('hcTblTitle').textContent=mode==='chord'?'Offsets from the long chord':'Offsets from the tangent';
+  const head=inch?`<th>${alongH}</th><th>Tape</th><th>${offH}</th><th>Tape</th>`:`<th>${alongH} (mm)</th><th>${offH} (mm)</th>`;
+  const body=pts.map(p=>{const o=off(p.d),t=p.tag?` <span class="given">${p.tag}</span>`:'';
+    return `<tr${p.tag==='centre'?' class="key"':''}>`+(inch?`<td>${fmt(p.d,3)}${t}</td><td>${fmtFrac(p.d,den)}</td><td>${fmt(o,3)}</td><td>${fmtFrac(o,den)}</td>`:`<td>${fmt(p.d,1)}${t}</td><td>${fmt(o,1)}</td>`)+'</tr>';}).join('');
+  const note=mode==='tan'&&c.dl>90?`<p class="hint">Δ is over 90°, so tangent offsets stop at R from the start. Use long-chord offsets for the full curve.</p>`:'';
+  $('hcTbl').innerHTML=`<thead><tr>${head}</tr></thead><tbody>${body}</tbody>`;
+  $('hcTblNote')?.remove();if(note)$('hcTbl').parentElement.insertAdjacentHTML('afterend',`<div id="hcTblNote">${note}</div>`);
+  drawShop(c,mode,pts.map(p=>[p.d,off(p.d)]),F);
+}
+function drawShop(c,mode,offs,F){
+  const R=c.R,arc=[],n=60;
+  if(mode==='chord'){const cm=R-c.M;for(let i=0;i<=n;i++){const t=-c.h+2*c.h*i/n;arc.push([c.LC/2+R*Math.sin(t),R*Math.cos(t)-cm]);}}
+  else{for(let i=0;i<=n;i++){const t=2*c.h*i/n;arc.push([R*Math.sin(t),R*(1-Math.cos(t))]);}}
+  const base=mode==='chord'?[[0,0],[c.LC,0]]:[[0,0],[Math.max(...arc.map(p=>p[0])),0]];
+  const all=[...arc,...base],xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const W=320,H=230,m=30,sc=Math.min((W-2*m)/(maxX-minX||1),(H-2*m-16)/(maxY-minY||1));
+  const ox=(W-(maxX-minX)*sc)/2,oy=H-m-((H-2*m-16)-(maxY-minY)*sc)/2;
+  const P=p=>[(ox+(p[0]-minX)*sc).toFixed(1),(oy-(p[1]-minY)*sc).toFixed(1)];
+  const step=Math.max(1,Math.ceil(offs.length/40));
+  let ticks='';offs.forEach((o,i)=>{if(i%step&&i!==offs.length-1)return;const a=P([o[0],0]),b=P([o[0],o[1]]);ticks+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="tan"/>`;});
+  const b0=P(base[0]),b1=P(base[1]);
+  let lab='';
+  if(mode==='chord'){const mid=P([c.LC/2,c.M]),mb=P([c.LC/2,0]);
+    lab=`<line x1="${mb[0]}" y1="${mb[1]}" x2="${mid[0]}" y2="${mid[1]}" stroke="var(--accent)" stroke-width="2"/>`+
+      `<text x="${(+b0[0]+ +b1[0])/2}" y="${+b0[1]+16}" class="t" text-anchor="middle">span ${F(c.LC)}</text>`+
+      `<text x="${+mid[0]+6}" y="${(+mid[1]+ +mb[1])/2}" class="tk">rise</text>`;}
+  else lab=`<text x="${b0[0]}" y="${+b0[1]+16}" class="t">tangent →</text>`;
+  $('hcSvg').innerHTML=`<line x1="${b0[0]}" y1="${b0[1]}" x2="${b1[0]}" y2="${b1[1]}" class="tan" stroke-width="2"/>`+ticks+
+    `<polyline class="c" points="${arc.map(p=>P(p).join(',')).join(' ')}"/>`+lab+
+    `<text x="8" y="${H-6}" class="t">R ${F(R)}</text>`;
+}
+function drawHC(R,dl,T,dir){
+  const D=dl*D2R,arc=[];
+  for(let i=0;i<=60;i++){const t=D*i/60;arc.push([R*Math.sin(t),R*(1-Math.cos(t))]);}
+  const PT=arc[60],PI=[T,0],ext=Math.max(T*.35,R*.08);
+  const back=[-ext,0],ahead=[PT[0]+ext*Math.cos(D),PT[1]+ext*Math.sin(D)];
+  const pts=[...arc,PI,back,ahead];
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const W=320,H=230,m=30,sc=Math.min((W-2*m)/(maxX-minX||1),(H-2*m)/(maxY-minY||1));
+  const ox=(W-(maxX-minX)*sc)/2,oy=(H-(maxY-minY)*sc)/2,sg=dir==='R'?1:-1;
+  const P=p=>{const x=ox+(p[0]-minX)*sc;const y=sg>0?oy+(p[1]-minY)*sc:H-oy-(p[1]-minY)*sc;return [x.toFixed(1),y.toFixed(1)];};
+  const L=(a,b,c)=>`<line x1="${P(a)[0]}" y1="${P(a)[1]}" x2="${P(b)[0]}" y2="${P(b)[1]}" class="${c}"/>`;
+  const lbl=(p,t,dx,dy,c='tk')=>`<text x="${+P(p)[0]+dx}" y="${+P(p)[1]+dy}" class="${c}" text-anchor="middle">${t}</text>`;
+  const dot=p=>`<circle cx="${P(p)[0]}" cy="${P(p)[1]}" r="3.5" class="pt"/>`;
+  const off=sg>0?-10:16;
+  $('hcSvg').innerHTML=
+    L(back,[0,0],'tan')+L([0,0],PI,'tan dash')+L(PI,PT,'tan dash')+L(PT,ahead,'tan')+L([0,0],PT,'tan dot')+
+    `<polyline class="c" points="${arc.map(p=>P(p).join(',')).join(' ')}"/>`+
+    dot([0,0])+dot(PT)+dot(PI)+lbl([0,0],'PC',0,off)+lbl(PT,'PT',14,4)+lbl(PI,'PI',0,off)+
+    lbl(PI,'Δ '+fmtDMS(dl),0,off+(sg>0?-14:14),'t')+
+    `<text x="8" y="${H-8}" class="t">R ${fmt(R,1)}  ·  turn ${dir==='R'?'right':'left'}</text>`;
+}
+
+/* ---------- vertical curve ---------- */
+function calcVC(){
+  const g1=Number($('vcG1').value),g2=Number($('vcG2').value),L=Number($('vcL').value);
+  const pvi=parseSta($('vcPVI').value),pel=Number($('vcEl').value),iv=Number($('vcInt').value);
+  const ok=[Number.isFinite(g1),Number.isFinite(g2),L>0,Number.isFinite(pvi),Number.isFinite(pel)];
+  ['vcG1','vcG2','vcL','vcPVI','vcEl'].forEach((id,i)=>$(id).classList.toggle('err',!ok[i]||$(id).value.trim()===''));
+  if(ok.includes(false)||g1===g2){$('vcRes').innerHTML=msg(g1===g2?'Grades are equal — no curve needed.':'Fill in both grades, a positive length, PVI station and elevation.');$('vcTbl').innerHTML='';$('vcSvg').innerHTML='';return;}
+  const A=g2-g1,bvc=pvi-L/2,evc=pvi+L/2,bel=pel-g1/100*L/2,eel=pel+g2/100*L/2;
+  const f=x=>bel+g1/100*x+A/100/(2*L)*x*x;
+  let tp=null;const xt=-g1*L/A;if(xt>0&&xt<L)tp={sta:bvc+xt,el:f(xt)};
+  const type=A<0?'Crest':'Sag';
+  $('vcRes').innerHTML=resList([
+    ['Type',type],['A = g₂ − g₁',fmt(A,3)+' %'],['K = L/|A|',fmt(L/Math.abs(A),1)],['r',fmt(A/(L/100),3)+' %/sta'],['Mid-ordinate e',fmt(A*L/800,3)],'-',
+    ['BVC',fmtSta(bvc),1],['BVC elev.',fmt(bel,3)],['EVC',fmtSta(evc),1],['EVC elev.',fmt(eel,3)],'-',
+    [tp?(type==='Crest'?'High point':'Low point'):'Turning point',tp?fmtSta(tp.sta):'none on curve',!!tp],
+    ...(tp?[[(type==='Crest'?'High':'Low')+' elev.',fmt(tp.el,3)]]:[])]);
+  const list=[{sta:bvc,tag:'BVC'}];let s=Math.ceil(bvc/iv)*iv;if(Math.abs(s-bvc)<1e-6)s+=iv;
+  while(s<evc-1e-6&&list.length<400){list.push({sta:s});s+=iv;}
+  list.push({sta:evc,tag:'EVC'});
+  if(tp)list.push({sta:tp.sta,tag:type==='Crest'?'HIGH':'LOW'});
+  if(!list.some(r=>Math.abs(r.sta-pvi)<1e-6))list.push({sta:pvi,tag:'PVI'});else list.find(r=>Math.abs(r.sta-pvi)<1e-6).tag='PVI';
+  list.sort((a,b)=>a.sta-b.sta);
+  $('vcTbl').innerHTML='<thead><tr><th>Station</th><th>x from BVC</th><th>Tangent el.</th><th>Offset</th><th>Curve el.</th><th>Grade %</th></tr></thead><tbody>'+
+    list.map(r=>{const x=r.sta-bvc,te=r.sta<=pvi?bel+g1/100*x:pel+g2/100*(r.sta-pvi),ce=f(x);
+      return `<tr${r.tag?' class="key"':''}><td>${fmtSta(r.sta)}${r.tag?' '+r.tag:''}</td><td>${fmt(x)}</td><td>${fmt(te,3)}</td><td>${fmt(ce-te,3)}</td><td>${fmt(ce,3)}</td><td>${fmt(g1+A*x/L,3)}</td></tr>`;}).join('')+'</tbody>';
+  drawVC(g1,g2,L,pvi,pel,bvc,evc,bel,eel,f,tp);
+}
+function drawVC(g1,g2,L,pvi,pel,bvc,evc,bel,eel,f,tp){
+  const x0=bvc-L*.25,x1=evc+L*.25,e0=pel-g1/100*(pvi-x0),e1=pel+g2/100*(x1-pvi);
+  const cv=[];for(let i=0;i<=60;i++){const x=L*i/60;cv.push([bvc+x,f(x)]);}
+  const es=[e0,e1,pel,...cv.map(p=>p[1])],mn=Math.min(...es),mx=Math.max(...es);
+  const W=320,H=210,m=28,sx=(W-2*m)/(x1-x0),sy=(H-2*m-14)/((mx-mn)||1);
+  const P=(s,e)=>[(m+(s-x0)*sx).toFixed(1),(H-m-(e-mn)*sy).toFixed(1)];
+  const dot=(s,e)=>`<circle cx="${P(s,e)[0]}" cy="${P(s,e)[1]}" r="3.5" class="pt"/>`;
+  const txt=(s,e,t,dy,c='tk')=>`<text x="${P(s,e)[0]}" y="${+P(s,e)[1]+dy}" class="${c}" text-anchor="middle">${t}</text>`;
+  const crest=g2<g1,up=crest?-10:18,dn=crest?18:-10;
+  $('vcSvg').innerHTML=
+    `<polyline class="tan dash" points="${P(x0,e0)} ${P(pvi,pel)} ${P(x1,e1)}"/>`+
+    `<polyline class="c" points="${cv.map(p=>P(p[0],p[1]).join(',')).join(' ')}"/>`+
+    dot(bvc,bel)+dot(evc,eel)+dot(pvi,pel)+txt(bvc,bel,'BVC',dn)+txt(evc,eel,'EVC',dn)+txt(pvi,pel,'PVI',up)+
+    (tp?`<circle cx="${P(tp.sta,tp.el)[0]}" cy="${P(tp.sta,tp.el)[1]}" r="3" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`:'')+
+    `<text x="8" y="${H-8}" class="t">${fmt(g1,2)}% → ${fmt(g2,2)}%  ·  L ${fmt(L,0)}  ·  vert. exag.</text>`;
+}
+
+/* ---------- shapes ---------- */
+const S='class="shape"',T=(x,y,t)=>`<text x="${x}" y="${y}" class="tk" text-anchor="middle">${t}</text>`;
+const dsh=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="tan dash"/>`;
+const hexPts=(n,r)=>Array.from({length:n},(_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;return (100+r*Math.cos(a)).toFixed(1)+','+(62+r*Math.sin(a)).toFixed(1);}).join(' ');
+const AREA={
+  rect:{n:'Rectangle',f:[['L','Length','24-6'],['W','Width','16']],c:v=>({A:v.L*v.W,P:2*(v.L+v.W)}),
+    svg:`<rect x="40" y="22" width="120" height="76" ${S}/>`+T(100,118,'L')+T(172,64,'W')},
+  tri:{n:'Triangle (base × height)',f:[['b','Base','30'],['h','Height (h)','18']],c:v=>({A:v.b*v.h/2}),
+    svg:`<polygon points="30,104 170,104 115,22" ${S}/>`+dsh(115,22,115,104)+T(100,121,'b')+T(124,70,'h')},
+  tri3:{n:'Triangle (3 sides)',f:[['a','Side a','30'],['b','Side b','25'],['c','Side c','20']],
+    c:v=>{const s=(v.a+v.b+v.c)/2,q=s*(s-v.a)*(s-v.b)*(s-v.c);return q>0?{A:Math.sqrt(q),P:2*s}:{err:'Those sides do not form a triangle.'};},
+    svg:`<polygon points="30,104 170,104 95,22" ${S}/>`+T(100,121,'a')+T(144,58,'b')+T(52,58,'c')},
+  circle:{n:'Circle',f:[['d','Diameter','12']],c:v=>({A:Math.PI*v.d*v.d/4,P:Math.PI*v.d,Pn:'Circumference'}),
+    svg:`<circle cx="100" cy="62" r="48" ${S}/>`+dsh(52,62,148,62)+T(100,56,'d')},
+  ellipse:{n:'Ellipse',f:[['a','Major axis (full)','20'],['b','Minor axis (full)','12']],
+    c:v=>{const a=v.a/2,b=v.b/2,h=((a-b)/(a+b))**2;return {A:Math.PI*a*b,P:Math.PI*(a+b)*(1+3*h/(10+Math.sqrt(4-3*h))),Pn:'Perimeter ≈'};},
+    svg:`<ellipse cx="100" cy="62" rx="72" ry="40" ${S}/>`+dsh(28,62,172,62)+dsh(100,22,100,102)+T(140,56,'a')+T(110,42,'b')},
+  trap:{n:'Trapezoid',f:[['a','Top (a)','12'],['b','Bottom (b)','20'],['h','Height (h)','8']],c:v=>({A:(v.a+v.b)/2*v.h}),
+    svg:`<polygon points="30,104 170,104 135,28 65,28" ${S}/>`+dsh(150,28,150,104)+T(100,20,'a')+T(100,121,'b')+T(160,70,'h')},
+  sector:{n:'Sector',f:[['r','Radius','15'],['t','Angle (deg)','70','ang']],
+    c:v=>({A:Math.PI*v.r*v.r*v.t/360,P:v.r*v.t*D2R,Pn:'Arc length'}),
+    svg:`<path d="M60 108 L170 108 A110 110 0 0 0 97.6 4.6 Z" ${S}/>`+T(118,124,'r')+T(82,96,'θ')},
+  poly:{n:'Regular polygon',f:[['n','Number of sides','6','int'],['s','Side length','5']],
+    c:v=>v.n>=3?{A:v.n*v.s*v.s/(4*Math.tan(Math.PI/v.n)),P:v.n*v.s}:{err:'Need at least 3 sides.'},
+    svg:`<polygon points="${hexPts(6,50)}" ${S}/>`+T(100,124,'s')},
+  ring:{n:'Ring (annulus)',f:[['D','Outer diameter','10'],['d','Inner diameter','6']],
+    c:v=>v.D>v.d?{A:Math.PI*(v.D*v.D-v.d*v.d)/4}:{err:'Outer diameter must be larger than inner.'},
+    svg:`<path fill-rule="evenodd" d="M100 12a50 50 0 1 0 .01 0Z M100 37a25 25 0 1 0 .01 0Z" ${S}/>`+dsh(50,62,150,62)+T(136,56,'D')+T(100,56,'d')}
+};
+const VOL={
+  box:{n:'Box / slab',f:[['L','Length','20'],['W','Width','10'],['H','Thickness','0-4']],c:v=>({V:v.L*v.W*v.H}),
+    svg:`<polygon points="35,50 135,50 165,28 65,28" ${S}/><polygon points="135,50 165,28 165,82 135,104" ${S}/><rect x="35" y="50" width="100" height="54" ${S}/>`+T(85,121,'L')+T(160,104,'W')+T(24,80,'H')},
+  cyl:{n:'Cylinder',f:[['d','Diameter','1-6'],['h','Height','4']],c:v=>({V:Math.PI*v.d*v.d/4*v.h}),
+    svg:`<path d="M55 28 V100 A45 12 0 0 0 145 100 V28" ${S}/><ellipse cx="100" cy="28" rx="45" ry="12" ${S}/>`+T(100,32,'d')+T(160,68,'h')},
+  cone:{n:'Cone',f:[['d','Base diameter','10'],['h','Height','6']],c:v=>({V:Math.PI*v.d*v.d/4*v.h/3}),
+    svg:`<path d="M100 14 L48 100 A52 13 0 0 0 152 100 Z" ${S}/>`+dsh(100,14,100,100)+T(100,124,'d')+T(110,64,'h')},
+  frustum:{n:'Frustum (truncated cone)',f:[['D','Bottom diameter','10'],['d','Top diameter','6'],['h','Height','4']],
+    c:v=>({V:Math.PI*v.h/12*(v.D*v.D+v.D*v.d+v.d*v.d)}),
+    svg:`<path d="M72 28 L45 100 A55 13 0 0 0 155 100 L128 28" ${S}/><ellipse cx="100" cy="28" rx="28" ry="8" ${S}/>`+T(100,124,'D')+T(100,16,'d')+T(160,66,'h')},
+  sphere:{n:'Sphere',f:[['d','Diameter','4']],c:v=>({V:Math.PI*v.d**3/6}),
+    svg:`<circle cx="100" cy="62" r="48" ${S}/><ellipse cx="100" cy="62" rx="48" ry="13" class="tan dash"/>`+T(100,56,'d')},
+  pyramid:{n:'Pyramid (rect. base)',f:[['L','Base length','12'],['W','Base width','8'],['H','Height','9']],c:v=>({V:v.L*v.W*v.H/3}),
+    svg:`<polygon points="30,100 140,100 170,78 60,78" ${S}/><path d="M30 100 L100 14 L140 100 M100 14 L170 78" class="tan"/>`+T(85,118,'L')+T(166,96,'W')+T(108,40,'H')},
+  prism:{n:'Triangular prism',f:[['b','Triangle base','6'],['h','Triangle height','4'],['L','Length','20']],c:v=>({V:v.b*v.h/2*v.L}),
+    svg:`<polygon points="30,104 80,104 55,50" ${S}/><path d="M55 50 L150 26 L175 80 L80 104 M175 80 L130 80" class="tan"/>`+T(55,121,'b')+T(130,104,'L')+T(42,74,'h')}
+};
+
+const UNITS={in:{f:0.0254,imp:1,a:'in'},ft:{f:0.3048,imp:1,a:'ft'},yd:{f:0.9144,imp:1,a:'yd'},mm:{f:0.001,a:'mm'},cm:{f:0.01,a:'cm'},m:{f:1,a:'m'}};
+const HINTS={in:'Inches. Accepts 5-1/2, 5 1/2 or decimal.',ft:'Feet. Accepts 5-10 (5′10″), 6-4-1/2, or decimal feet.',yd:'Yards, decimal.',mm:'Millimetres, decimal.',cm:'Centimetres, decimal.',m:'Metres, decimal.'};
+function setupShapes(pre,DEF,isVol){
+  const sel=$(pre+'Shape'),usel=$(pre+'Unit');
+  sel.innerHTML=Object.entries(DEF).map(([k,d])=>`<option value="${k}">${d.n}</option>`).join('');
+  if(store[pre+'Shape']&&DEF[store[pre+'Shape']])sel.value=store[pre+'Shape'];
+  if(UNITS[store[pre+'Unit']])usel.value=store[pre+'Unit'];
+  const build=()=>{
+    const d=DEF[sel.value];
+    $(pre+'Fields').innerHTML=d.f.map(([k,l,def,t])=>{
+      const id=`${pre}_${sel.value}_${k}`,val=store[id]??def;
+      return `<label>${l}<input id="${id}" value="${val}" ${t?'inputmode="decimal"':''}></label>`;}).join('');
+    $(pre+'Svg').innerHTML=d.svg;
+    $(pre+'Hint').textContent=HINTS[usel.value];
+    calc();
+  };
+  const calc=()=>{
+    const d=DEF[sel.value],u=usel.value,U=UNITS[u],v={};let bad=false;
+    d.f.forEach(([k,,,t])=>{const el=$(`${pre}_${sel.value}_${k}`);
+      const x=t?Number(el.value):(u==='in'?evalInch(el.value.replace(/-/g,' ')):parseLen(el.value,u));
+      const good=Number.isFinite(x)&&x>0;el.classList.toggle('err',!good);if(!good)bad=true;v[k]=t?x:x*U.f;store[el.id]=el.value;});
+    save();
+    const out=$(pre+'Res');
+    if(bad){out.innerHTML=msg('Enter a positive value in each field.');return;}
+    const r=d.c(v);if(r.err){out.innerHTML=msg(r.err);return;}
+    const rows=[];
+    if(!isVol){
+      const A=r.A; // m²
+      rows.push(['Square '+U.a,fmt(A/U.f**2,u==='mm'?0:2),1],'-');
+      const list=U.imp?[['in','Square inches',A/0.00064516],['ft','Square feet',A/0.09290304],['yd','Square yards',A/0.83612736],['','Acres',A/4046.8564224,4],['m','Square metres',A]]
+                      :[['cm','Square centimetres',A*1e4],['m','Square metres',A],['','Hectares',A/1e4,4],['ft','Square feet',A/0.09290304],['','Acres',A/4046.8564224,4]];
+      list.forEach(([k,n,x,dp])=>{if(k!==u)rows.push([n,fmt(x,dp??2)]);});
+      if(r.P){const p=r.P/U.f;rows.push('-',[r.Pn||'Perimeter',fmt(p)+' '+U.a]);
+        if(U.imp)rows.push(['',fmtFtIn(r.P/0.3048)+' ft-in']);}
+    }else{
+      const V=r.V; // m³
+      rows.push(['Cubic '+U.a,fmt(V/U.f**3,u==='mm'?0:3),1],'-');
+      const list=U.imp?[['in','Cubic inches',V/1.6387064e-5,1],['ft','Cubic feet',V/0.028316846592],['yd','Cubic yards',V/0.764554857984,3],['','US gallons',V/0.003785411784,1],['m','Cubic metres',V,3]]
+                      :[['cm','Cubic centimetres',V*1e6,0],['','Litres',V*1000,1],['m','Cubic metres',V,3],['ft','Cubic feet',V/0.028316846592],['yd','Cubic yards',V/0.764554857984,3]];
+      list.forEach(([k,n,x,dp])=>{if(k!==u)rows.push([n,fmt(x,dp??2)]);});
+      const w=Number($('voWaste').value),wOk=$('voWaste').value.trim()!==''&&w>=0;
+      $('voWaste').classList.toggle('err',!wOk);
+      if(wOk&&w>0){const k=1+w/100;rows.push('-',[`+${fmt(w,w%1?1:0)}% waste`,U.imp?fmt(V/0.764554857984*k,2)+' yd³':fmt(V*k,3)+' m³']);}
+    }
+    out.innerHTML=resList(rows);
+  };
+  sel.addEventListener('change',()=>{store[pre+'Shape']=sel.value;save();build();});
+  usel.addEventListener('change',()=>{store[pre+'Unit']=usel.value;save();build();});
+  $(pre+'Fields').addEventListener('input',calc);
+  if(isVol)$('voWaste').addEventListener('input',()=>{store.voWaste=$('voWaste').value;calc();});
+  build();
+}
+
+/* ---------- triangle ---------- */
+const TS=['a','b','c'],TA={a:'A',b:'B',c:'C'};
+function triFull(o){ // o has all three angles (rad) and sides
+  return {a:o.a,b:o.b,c:o.c,A:o.A,B:o.B,C:o.C};}
+function triSSS(a,b,c){
+  if(a+b<=c||a+c<=b||b+c<=a)return [];
+  const cl=x=>Math.min(1,Math.max(-1,x));
+  const A=Math.acos(cl((b*b+c*c-a*a)/(2*b*c))),B=Math.acos(cl((a*a+c*c-b*b)/(2*a*c)));
+  return [{a,b,c,A,B,C:Math.PI-A-B}];}
+function solve3(k){
+  const angs=['A','B','C'].filter(x=>k[x]!=null),sides=TS.filter(x=>k[x]!=null);
+  if(!sides.length)return [];
+  if(angs.length>=2){
+    const g={A:k.A,B:k.B,C:k.C};const miss=['A','B','C'].find(x=>g[x]==null);
+    if(miss){g[miss]=Math.PI-angs.reduce((t,x)=>t+k[x],0);if(g[miss]<=1e-9)return [];}
+    else if(Math.abs(g.A+g.B+g.C-Math.PI)>1e-6)return [];
+    const s=sides[0],r=k[s]/Math.sin(g[TA[s]]);
+    return [{a:r*Math.sin(g.A),b:r*Math.sin(g.B),c:r*Math.sin(g.C),A:g.A,B:g.B,C:g.C}];
+  }
+  if(angs.length===0)return triSSS(k.a,k.b,k.c);
+  const X=angs[0],x=X.toLowerCase();
+  if(k[x]==null){ // SAS: included angle
+    const [p,q]=sides,third=Math.sqrt(k[p]**2+k[q]**2-2*k[p]*k[q]*Math.cos(k[X]));
+    const v={a:k.a,b:k.b,c:k.c};v[x]=third;return triSSS(v.a,v.b,v.c);
+  }
+  // SSA
+  const y=sides.find(s=>s!==x),Y=TA[y],z=TS.find(s=>s!==x&&s!==y),Z=TA[z];
+  const sy=k[y]*Math.sin(k[X])/k[x];if(sy>1+1e-12)return [];
+  const y1=Math.asin(Math.min(1,sy)),cands=[y1];
+  if(Math.abs(Math.PI-2*y1)>1e-9)cands.push(Math.PI-y1);
+  const out=[];
+  cands.forEach(yy=>{const zz=Math.PI-k[X]-yy;if(zz<=1e-9)return;
+    const o={};o[X]=k[X];o[Y]=yy;o[Z]=zz;o[x]=k[x];o[y]=k[y];o[z]=k[x]*Math.sin(zz)/Math.sin(k[X]);out.push(o);});
+  return out;
+}
+function solveTri(k){
+  const keys=Object.keys(k);
+  if(keys.length===3)return {sols:solve3(k)};
+  const combos=[];
+  for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)for(let m=j+1;m<keys.length;m++)combos.push([keys[i],keys[j],keys[m]]);
+  const ok=t=>keys.every(key=>{const g=k[key],v=t[key];return TS.includes(key)?Math.abs(v-g)<=Math.max(1e-9,0.002*g):Math.abs(v-g)<=0.02*D2R;});
+  const out=[];
+  combos.forEach(cmb=>{if(!cmb.some(x=>TS.includes(x)))return;const sub={};cmb.forEach(x=>sub[x]=k[x]);
+    solve3(sub).forEach(t=>{if(ok(t)&&!out.some(o=>TS.every(s=>Math.abs(o[s]-t[s])<1e-6*o[s])))out.push(t);});});
+  return out.length?{sols:out}:{err:'Those values don’t agree with each other. Clear one of them.'};
+}
+function calcTR(){
+  const u=$('trUnit').value,ua=UNITS[u].a,k={},given=new Set();let bad=false;
+  TS.forEach(s=>{const el=$('tr_'+s),raw=el.value.trim();store[el.id]=el.value;
+    if(!raw){el.classList.remove('err');return;}
+    const x=u==='in'?evalInch(raw.replace(/-/g,' ')):parseLen(raw,u),good=Number.isFinite(x)&&x>0;
+    el.classList.toggle('err',!good);if(good){k[s]=x;given.add(s);}else bad=true;});
+  ['A','B','C'].forEach(a=>{const el=$('tr_'+a),raw=el.value.trim();store[el.id]=el.value;
+    if(!raw){el.classList.remove('err');return;}
+    const x=parseDMS(raw),good=x>0&&x<180;el.classList.toggle('err',!good);if(good){k[a]=x*D2R;given.add(a);}else bad=true;});
+  save();
+  const n=given.size,ns=TS.filter(s=>given.has(s)).length;
+  $('trCount').innerHTML=`<b>${n}</b> of 3 entered`+(n?` · ${[...given].join(', ')}`:'');
+  const F=x=>`${fmt(x)} ${ua}`+(u==='ft'?` (${fmtFtIn(x)})`:'');
+  if(bad){$('trRes').innerHTML=msg('Sides must be positive; angles between 0° and 180°.');drawTR(null,k,given,'Fix the red fields.');return;}
+  if(n<3||!ns){
+    const need=!ns&&n>=3?'Add one side to set the size.':`Enter ${3-n} more value${3-n>1?'s':''}${ns?'':', including at least one side'}.`;
+    $('trRes').innerHTML=`<p class="hint">${need}</p>`;drawTR(null,k,given,'Not to scale — '+need.toLowerCase());return;
+  }
+  const sv=solveTri(k);
+  if(sv.err){$('trRes').innerHTML=msg(sv.err);drawTR(null,k,given,sv.err);return;}
+  if(!sv.sols.length){$('trRes').innerHTML=msg('No triangle can be made from those values.');drawTR(null,k,given,'No triangle fits these values.');return;}
+  const si=Math.min(store.trSol|0,sv.sols.length-1),t=sv.sols[si];
+  const P=t.a+t.b+t.c,sp=P/2,Ar=Math.sqrt(Math.max(0,sp*(sp-t.a)*(sp-t.b)*(sp-t.c)));
+  const maxAng=Math.max(t.A,t.B,t.C)/D2R;
+  const kind=Math.abs(maxAng-90)<0.0005?'Right':maxAng>90?'Obtuse':'Acute';
+  const eq=(p,q)=>Math.abs(p-q)<1e-6*Math.max(p,q);
+  const sk=eq(t.a,t.b)&&eq(t.b,t.c)?'equilateral':(eq(t.a,t.b)||eq(t.b,t.c)||eq(t.a,t.c))?'isosceles':'scalene';
+  const pick=sv.sols.length>1?`<div class="solpick"><p>Two triangles fit these values:</p><div class="seg" id="trSolSeg">`+
+    sv.sols.map((s,i)=>`<button type="button" data-tsol="${i}" aria-pressed="${i===si}">${s.a!==undefined?['A','B','C'].filter(x=>!given.has(x)).map(x=>x+' '+fmtDMS(s[x]/D2R)).join(', '):''}</button>`).join('')+'</div></div>':'';
+  $('trRes').innerHTML=pick+resList([
+    ['Side a',F(t.a),0,given.has('a')],['Side b',F(t.b),0,given.has('b')],['Side c',F(t.c),0,given.has('c')],'-',
+    ['Angle A',fmtDMS(t.A/D2R,1),0,given.has('A')],['Angle B',fmtDMS(t.B/D2R,1),0,given.has('B')],['Angle C',fmtDMS(t.C/D2R,1),0,given.has('C')],'-',
+    ['Area',`${fmt(Ar)} ${ua}²`,1],['Perimeter',F(P),1],'-',
+    ['Height to a',F(2*Ar/t.a)],['Height to b',F(2*Ar/t.b)],['Height to c',F(2*Ar/t.c)],
+    ['Inscribed circle r',F(Ar/sp)],['Circumscribed R',F(t.a/(2*Math.sin(t.A)))],'-',
+    ['Type',`${kind}, ${sk}`]]);
+  drawTR(t,k,given,sv.sols.length>1?'Ambiguous case (SSA): pick a solution above the results.':'Drawn to scale.',F);
+}
+function drawTR(t,k,given,note,F){
+  const solved=!!t;let s=t;
+  if(!solved){ // reference shape from whatever angles are known
+    let A=k.A,B=k.B,C=k.C;const known=[A,B,C].filter(x=>x!=null),sum=known.reduce((p,q)=>p+q,0);
+    if(known.length===3&&Math.abs(sum-Math.PI)>1e-4){A=B=C=null;}
+    if(known.length===2&&sum<Math.PI-1e-6){if(A==null)A=Math.PI-B-C;else if(B==null)B=Math.PI-A-C;else C=Math.PI-A-B;}
+    else if(known.length===1&&known[0]<Math.PI-1e-6){const r=(Math.PI-known[0])/2;A=A??r;B=B??r;C=C??r;}
+    if(A==null||B==null||C==null||!(A>0&&B>0&&C>0)){A=55*D2R;B=65*D2R;C=60*D2R;}
+    s={A,B,C,a:Math.sin(A),b:Math.sin(B),c:Math.sin(C)};
+  }
+  const pa=[0,0],pb=[s.c,0],pc=[s.b*Math.cos(s.A),s.b*Math.sin(s.A)];
+  const xs=[pa[0],pb[0],pc[0]],ys=[pa[1],pb[1],pc[1]];
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const W=400,H=280,mx0=112,my0=40,sc=Math.min((W-2*mx0)/(maxX-minX||1),(H-2*my0)/(maxY-minY||1));
+  const ox=(W-(maxX-minX)*sc)/2,oy=H-(H-(maxY-minY)*sc)/2;
+  const P=p=>[ox+(p[0]-minX)*sc,oy-(p[1]-minY)*sc];
+  const V={A:P(pa),B:P(pb),C:P(pc)},cen=[(V.A[0]+V.B[0]+V.C[0])/3,(V.A[1]+V.B[1]+V.C[1])/3];
+  const f1=x=>x.toFixed(1);
+  let out=`<polygon points="${[V.A,V.B,V.C].map(p=>p.map(f1).join(',')).join(' ')}" class="${solved?'shape':'ref'}"/>`;
+  const adj={A:['B','C'],B:['C','A'],C:['A','B']},sideOf={A:'a',B:'b',C:'c'};
+  ['A','B','C'].forEach(X=>{
+    const v=V[X],[p,q]=adj[X].map(Y=>V[Y]);
+    let t1=Math.atan2(p[1]-v[1],p[0]-v[0]),t2=Math.atan2(q[1]-v[1],q[0]-v[0]);
+    let d=t2-t1;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;
+    const lp=Math.hypot(p[0]-v[0],p[1]-v[1]),lq=Math.hypot(q[0]-v[0],q[1]-v[1]),r=Math.min(24,.3*Math.min(lp,lq));
+    const ang=s[X],right=Math.abs(ang-Math.PI/2)<1e-5;
+    if(right){const u1=[(p[0]-v[0])/lp,(p[1]-v[1])/lp],u2=[(q[0]-v[0])/lq,(q[1]-v[1])/lq],e=Math.min(12,r);
+      out+=`<polyline class="arc" points="${f1(v[0]+u1[0]*e)},${f1(v[1]+u1[1]*e)} ${f1(v[0]+(u1[0]+u2[0])*e)},${f1(v[1]+(u1[1]+u2[1])*e)} ${f1(v[0]+u2[0]*e)},${f1(v[1]+u2[1]*e)}"/>`;}
+    else{const pts=[];for(let i=0;i<=16;i++){const a=t1+d*i/16;pts.push(f1(v[0]+r*Math.cos(a))+','+f1(v[1]+r*Math.sin(a)));}
+      out+=`<polyline class="arc" points="${pts.join(' ')}"/>`;}
+    const bis=t1+d/2,cx=-Math.cos(bis),cy=-Math.sin(bis);
+    const g=given.has(X),val=g?fmtDMS(k[X]/D2R):solved?fmtDMS(ang/D2R):'?';
+    const anc=cx<-0.35?'end':cx>0.35?'start':'middle',vx=v[0]+cx*12,vy=v[1]+cy*14+(cy>0.35?10:cy<-0.35?-2:4);
+    out+=`<text x="${f1(vx)}" y="${f1(vy)}" text-anchor="${anc}" data-f="${X}"><tspan class="vtx">${X}</tspan><tspan class="${g?'tk':solved?'t':'unk'}" dx="5">${val}</tspan></text>`;
+    // opposite side label
+    const sd=sideOf[X],[e1,e2]=adj[X].map(Y=>V[Y]),mx=(e1[0]+e2[0])/2,my=(e1[1]+e2[1])/2;
+    let nx=-(e2[1]-e1[1]),ny=e2[0]-e1[0];const nl=Math.hypot(nx,ny)||1;nx/=nl;ny/=nl;
+    if((mx-cen[0])*nx+(my-cen[1])*ny<0){nx=-nx;ny=-ny;}
+    const sg=given.has(sd),sval=sg||solved?fmt(solved?s[sd]:k[sd]):'?';
+    out+=`<text x="${f1(mx+nx*16)}" y="${f1(my+ny*16+4)}" text-anchor="middle" class="${sg?'tk':solved?'t':'unk'}" data-f="${sd}">${sd} ${sval}</text>`;
+  });
+  $('trSvg').innerHTML=out;$('trSkNote').textContent=note||'';
+}
+$('p-triangle').addEventListener('input',e=>{if(e.target.id&&e.target.id.startsWith('tr')){store.trSol=0;calcTR();}});
+$('trUnit').addEventListener('change',()=>{store.trUnit=$('trUnit').value;save();calcTR();});
+$('trClear').addEventListener('click',()=>{['a','b','c','A','B','C'].forEach(x=>{$('tr_'+x).value='';});store.trSol=0;calcTR();$('tr_a').focus();});
+$('trRes').addEventListener('click',e=>{const b=e.target.closest('[data-tsol]');if(!b)return;store.trSol=+b.dataset.tsol;save();calcTR();});
+$('trSvg').addEventListener('click',e=>{const t=e.target.closest('[data-f]');if(t){$('tr_'+t.dataset.f).focus();$('tr_'+t.dataset.f).select();}});
+calcTR();
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('#p-hcurve [data-save],#p-vcurve [data-save]').forEach(el=>{
+  const ev=el.tagName==='SELECT'?'change':'input';
+  el.addEventListener(ev,()=>{store[el.id]=el.value;save();el.closest('#p-hcurve')?calcHC():calcVC();});
+});
+$('hcRes').addEventListener('click',e=>{const b=e.target.closest('[data-sol]');if(!b)return;store.hcSol=+b.dataset.sol;save();calcHC();});
+$('hcShopInt').addEventListener('change',()=>{store['hcShopInt_'+$('hcUnit').value]=$('hcShopInt').value;save();calcHC();});
+['hcK1','hcK2','hcV1','hcV2'].forEach(id=>$(id).addEventListener('change',()=>{store.hcSol=0;}));
+setupShapes('ar',AREA,false);
+setupShapes('vo',VOL,true);
+calcHC();calcVC();
+
+const hostTheme=document.documentElement.getAttribute('data-theme');
+/* colour presets: [highlight, shape fill, curves] for light and dark */
+const PAL={
+  orange:{n:'Flagging orange',l:['#d9531a','#fbe6dc','#1f6f8b'],d:['#ff7a3d','#3a2418','#5fb3cf']},
+  blue:{n:'Blue',l:['#1d5fd1','#dfe9fb','#0f7a6c'],d:['#6aa2ff','#18263f','#4fc7b4']},
+  green:{n:'Green',l:['#2f7d32','#e0efe0','#8a5a12'],d:['#6cc070','#1b2e1c','#e0a85a']},
+  red:{n:'Red',l:['#c62828','#f9e0e0','#37474f'],d:['#ff6b6b','#3a1c1c','#9fb3bd']},
+  purple:{n:'Purple',l:['#6d3fc0','#ece4f9','#b25a00'],d:['#a98bff','#2a2140','#f0a050']}
+};
+const PARTS=[['--accent','Highlights & markers'],['--curve','Curves & lines'],['--accent-soft','Shape fill'],['--bg','Background'],['--paper','Panels'],['--ink','Text'],['--muted','Labels'],['--line','Borders']];
+$('accentSw').innerHTML=Object.entries(PAL).map(([k,p])=>`<button type="button" class="sw" data-ac="${k}" title="${p.n}" aria-label="${p.n}"></button>`).join('');
+document.querySelectorAll('#accentSw .sw').forEach(b=>{b.style.backgroundColor=PAL[b.dataset.ac].l[0];});
+$('colGrid').innerHTML=PARTS.map(([v,n],i)=>`<label><input type="color" id="col${i}" data-var="${v}">${n}</label>`).join('');
+if(!store.colors||typeof store.colors!=='object')store.colors={light:{},dark:{}};
+const mq=window.matchMedia('(prefers-color-scheme: dark)');
+function isDark(){const a=document.documentElement.getAttribute('data-theme');return a?a==='dark':mq.matches;}
+const toHex=c=>{c=c.trim();if(/^#[0-9a-f]{6}$/i.test(c))return c;if(/^#[0-9a-f]{3}$/i.test(c))return '#'+[...c.slice(1)].map(x=>x+x).join('');
+  const m=c.match(/\d+(\.\d+)?/g);return m?'#'+m.slice(0,3).map(x=>(+x|0).toString(16).padStart(2,'0')).join(''):'#000000';};
+function applyAccent(){
+  const th=isDark()?'dark':'light',st=document.documentElement.style;
+  PARTS.forEach(([v])=>st.removeProperty(v));
+  if(PAL[store.accent]){const v=PAL[store.accent][th==='dark'?'d':'l'];st.setProperty('--accent',v[0]);st.setProperty('--accent-soft',v[1]);st.setProperty('--curve',v[2]);}
+  const ov=store.colors[th]||{};Object.entries(ov).forEach(([v,c])=>st.setProperty(v,c));
+  const cs=getComputedStyle(document.documentElement);
+  document.querySelectorAll('#colGrid input').forEach(el=>{el.value=toHex(cs.getPropertyValue(el.dataset.var));});
+  document.querySelectorAll('#accentSw .sw').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ac===(store.accent||'orange')));
+  $('colTitle').textContent=(th==='dark'?'Dark':'Light')+' theme colours';
+}
+$('colGrid').addEventListener('input',e=>{const el=e.target;if(!el.dataset.var)return;const th=isDark()?'dark':'light';
+  (store.colors[th]=store.colors[th]||{})[el.dataset.var]=el.value;document.documentElement.style.setProperty(el.dataset.var,el.value);save();});
+$('accentSw').addEventListener('click',e=>{const b=e.target.closest('.sw');if(!b)return;store.accent=b.dataset.ac;
+  ['light','dark'].forEach(t=>{const o=store.colors[t]||{};delete o['--accent'];delete o['--accent-soft'];delete o['--curve'];});save();applyAccent();});
+$('colReset').addEventListener('click',()=>{store.colors[isDark()?'dark':'light']={};save();applyAccent();});
+const togglePanel=open=>{$('colPanel').hidden=!open;$('colBtn').setAttribute('aria-expanded',open);};
+$('colBtn').addEventListener('click',()=>togglePanel($('colPanel').hidden));
+$('colClose').addEventListener('click',()=>togglePanel(false));
+function setTheme(t){
+  const r=document.documentElement;
+  if(t==='light'||t==='dark')r.setAttribute('data-theme',t);
+  else if(hostTheme)r.setAttribute('data-theme',hostTheme);else r.removeAttribute('data-theme');
+  document.querySelectorAll('#themeSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===t));
+  store.theme=t;save();applyAccent();
+}
+$('themeSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTheme(b.dataset.th);});
+mq.addEventListener?.('change',applyAccent);
+new MutationObserver(applyAccent).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+setTheme(store.theme||'auto');
+
+const TABS=['hcurve','vcurve','area','volume','triangle'];
+function show(t){
+  if(!TABS.includes(t))t=store.tab&&TABS.includes(store.tab)?store.tab:'hcurve';
+  TABS.forEach(k=>{$('p-'+k).hidden=k!==t;});
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
+  store.tab=t;save();
+}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;location.hash=b.dataset.tab;show(b.dataset.tab);});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+show(location.hash.slice(1));
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
