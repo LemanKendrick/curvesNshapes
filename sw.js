@@ -1,6 +1,6 @@
 // curvesNshapes service worker: network-first, cache fallback for offline use.
 // Bump VERSION when you publish changes you want installed copies to pick up right away.
-const VERSION = 'cns-v3';
+const VERSION = 'cns-v5';
 const CORE = [
   './',
   './index.html',

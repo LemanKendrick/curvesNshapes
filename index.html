@@ -94,7 +94,10 @@ html,html *{forced-color-adjust:none}
 .trcount b{color:var(--accent);font-weight:600}
 .trout{grid-template-columns:1fr}
 svg [data-f]{cursor:pointer}
-#trSvg{max-height:360px}
+#trSvg,#arSvg,#voSvg{max-height:360px}
+svg .edge{fill:none;stroke:var(--curve);stroke-width:1.5}
+svg .shape.s2{fill-opacity:.6}
+svg .shape.s3{fill-opacity:.8}
 svg .ref{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:6 5}
 svg .arc{fill:none;stroke:var(--curve);stroke-width:1.5}
 svg .vtx{fill:var(--ink);font:700 14px var(--display)}
@@ -130,7 +133,7 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
 <body>
 
 <header class="top"><div class="wrap">
-  <div class="brand"><span class="mark">curves<b>N</b>shapes</span><span class="beta" id="appVer">v3</span></div>
+  <div class="brand"><span class="mark">curves<b>N</b>shapes</span><span class="beta" id="appVer">v5</span></div>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="hcurve">H-Curve</button>
     <button role="tab" data-tab="vcurve">V-Curve</button>
@@ -221,6 +224,7 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
 
 <!-- AREA -->
 <section class="panel" id="p-area" hidden>
+  <div class="card trsk"><h3>Shape</h3><svg class="sk" id="arSvg" viewBox="0 0 400 260" role="img" aria-label="Shape sketch"></svg><p class="hint" id="arSkNote"></p></div>
   <div class="grid">
     <form class="card fields" onsubmit="return false">
       <h2>Area</h2>
@@ -229,15 +233,15 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
       <div class="fields" id="arFields"></div>
       <p class="hint" id="arHint"></p>
     </form>
-    <div class="out">
+    <div class="out trout">
       <div class="card"><h3>Results</h3><div id="arRes"></div></div>
-      <div class="card"><h3>Shape</h3><svg class="sk" id="arSvg" viewBox="0 0 200 130" role="img" aria-label="Shape diagram"></svg></div>
     </div>
   </div>
 </section>
 
 <!-- VOLUME -->
 <section class="panel" id="p-volume" hidden>
+  <div class="card trsk"><h3>Shape</h3><svg class="sk" id="voSvg" viewBox="0 0 400 260" role="img" aria-label="Solid sketch"></svg><p class="hint" id="voSkNote"></p></div>
   <div class="grid">
     <form class="card fields" onsubmit="return false">
       <h2>Volume</h2>
@@ -247,9 +251,8 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
       <label>Waste % <small>0 hides the waste line</small><input id="voWaste" data-save value="10" inputmode="decimal"></label>
       <p class="hint" id="voHint"></p>
     </form>
-    <div class="out">
+    <div class="out trout">
       <div class="card"><h3>Results</h3><div id="voRes"></div></div>
-      <div class="card"><h3>Shape</h3><svg class="sk" id="voSvg" viewBox="0 0 200 130" role="img" aria-label="Solid diagram"></svg></div>
     </div>
   </div>
 </section>
@@ -277,12 +280,12 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
 </section>
 
 </main>
-<footer class="wrap"><span id="appVerFoot">curvesNshapes v3</span> · inputs are saved on this device · feet-inch entry: 5-10 or 6-4-1/2</footer>
+<footer class="wrap"><span id="appVerFoot">curvesNshapes v5</span> · inputs are saved on this device · feet-inch entry: 5-10 or 6-4-1/2</footer>
 
 <script>
 const $=id=>document.getElementById(id);
 /* App version: change here, and set the same number in sw.js (cns-vN) */
-const APP_VERSION='3';
+const APP_VERSION='5';
 $('appVer').textContent='v'+APP_VERSION;$('appVerFoot').textContent='curvesNshapes v'+APP_VERSION;
 const D2R=Math.PI/180;
 const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
@@ -581,6 +584,94 @@ const VOL={
     svg:`<polygon points="30,104 80,104 55,50" ${S}/><path d="M55 50 L150 26 L175 80 L80 104 M175 80 L130 80" class="tan"/>`+T(55,121,'b')+T(130,104,'L')+T(42,74,'h')}
 };
 
+/* ---------- live area sketches (world coords, y up) ---------- */
+const arcPts=(c,r,a0,a1,n=72)=>Array.from({length:n+1},(_,i)=>{const a=a0+(a1-a0)*i/n;return [c[0]+r*Math.cos(a),c[1]+r*Math.sin(a)];});
+const ellPts=(rx,ry,n=72)=>Array.from({length:n},(_,i)=>{const a=2*Math.PI*i/n;return [rx*Math.cos(a),ry*Math.sin(a)];});
+AREA.rect.draw=v=>{const L=v.L??(v.W?v.W*1.5:3),W=v.W??L/1.5;
+  return {polys:[[[0,0],[L,0],[L,W],[0,W]]],labels:[{f:'L',at:[L/2,0],dy:18},{f:'W',at:[L,W/2],dx:10,an:'start'}]};};
+AREA.tri.draw=v=>{const b=v.b??(v.h?v.h*1.6:3),h=v.h??b/1.6,x=.6*b;
+  return {polys:[[[0,0],[b,0],[x,h]]],dims:[[[x,h],[x,0]]],labels:[{f:'b',at:[b/2,0],dy:18},{f:'h',at:[x,h/2],dx:8,an:'start'}]};};
+AREA.tri3.draw=v=>{let a=v.a,b=v.b,c=v.c,ref=false;const kn=[a,b,c].filter(x=>x!=null),m=kn.length?Math.max(...kn):1;
+  a=a??m;b=b??m*.85;c=c??m*.7;
+  if(a+b<=c||a+c<=b||b+c<=a){a=30;b=25;c=20;ref=true;}
+  const x=(a*a+c*c-b*b)/(2*a),y=Math.sqrt(Math.max(0,c*c-x*x));
+  return {ref,polys:[[[0,0],[a,0],[x,y]]],labels:[{f:'a',at:[a/2,0],dy:18},{f:'b',at:[(a+x)/2,y/2],dx:10,an:'start'},{f:'c',at:[x/2,y/2],dx:-10,an:'end'}]};};
+AREA.circle.draw=v=>{const r=(v.d??1)/2;
+  return {polys:[arcPts([0,0],r,0,2*Math.PI)],dims:[[[-r,0],[r,0]]],labels:[{f:'d',at:[0,0],dy:-8}]};};
+AREA.ellipse.draw=v=>{const a=v.a??(v.b?v.b*1.6:1.6),b=v.b??a/1.6;
+  return {polys:[ellPts(a/2,b/2)],dims:[[[-a/2,0],[a/2,0]],[[0,-b/2],[0,b/2]]],labels:[{f:'a',at:[a/4,0],dy:-8},{f:'b',at:[0,b/4],dx:8,an:'start'}]};};
+AREA.trap.draw=v=>{const b=v.b??(v.a?v.a*1.6:2),a=v.a??b*.6,h=v.h??Math.max(a,b)*.45,l=(b-a)/2,xr=Math.max(b,l+a)+.06*Math.max(a,b);
+  return {polys:[[[0,0],[b,0],[l+a,h],[l,h]]],dims:[[[xr,0],[xr,h]]],labels:[{f:'a',at:[l+a/2,h],dy:-10},{f:'b',at:[b/2,0],dy:18},{f:'h',at:[xr,h/2],dx:8,an:'start'}]};};
+AREA.sector.draw=v=>{const r=v.r??1,ref=v.t!=null&&v.t>=360,t=Math.min(359.5,v.t??70)*D2R;
+  return {ref,polys:[[[0,0],...arcPts([0,0],r,0,t,Math.max(8,Math.ceil(t/D2R/3)))]],labels:[{f:'r',at:[r/2,0],dy:18},{f:'t',at:[.32*r*Math.cos(t/2),.32*r*Math.sin(t/2)]}]};};
+AREA.poly.draw=v=>{const okN=v.n>=3&&v.n<=200&&Number.isInteger(v.n),n=okN?v.n:6,s=v.s??1,R=s/(2*Math.sin(Math.PI/n)),a0=-Math.PI/2-Math.PI/n;
+  const pts=Array.from({length:n},(_,i)=>[R*Math.cos(a0+i*2*Math.PI/n),R*Math.sin(a0+i*2*Math.PI/n)]);
+  return {ref:v.n!=null&&!okN,polys:[pts],labels:[{f:'s',at:[0,-R*Math.cos(Math.PI/n)],dy:18},{f:'n',at:[0,0]}]};};
+AREA.ring.draw=v=>{const D=v.D??(v.d?v.d*1.6:1),d0=v.d??D*.6,ref=d0>=D,d=ref?D*.6:d0,R=D/2,r=d/2;
+  return {ref,polys:[arcPts([0,0],R,0,2*Math.PI),arcPts([0,0],r,0,2*Math.PI)],dims:[[[-R,0],[R,0]]],labels:[{f:'D',at:[0,R],dy:-10},{f:'d',at:[0,0],dy:-8}]};};
+function drawShape(pre,d,raw,u,note){
+  const g=d.draw(raw),all=d.f.every(([k])=>raw[k]!=null),scaled=all&&!g.ref;
+  const pts=[...(g.polys||[]).flat(),...(g.faces||[]).flatMap(f=>f.pts),...(g.lines||[]).flat(),...(g.hidden||[]).flat(),...(g.dims||[]).flat()],xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const W=400,H=260,mx=80,my=34,sc=Math.min((W-2*mx)/((maxX-minX)||1),(H-2*my)/((maxY-minY)||1));
+  const ox=(W-(maxX-minX)*sc)/2,oy=(H+(maxY-minY)*sc)/2;
+  const P=p=>[ox+(p[0]-minX)*sc,oy-(p[1]-minY)*sc],f1=x=>x.toFixed(1);
+  const pth=pl=>pl.map(p=>P(p).map(f1).join(' ')).join('L');
+  let out=g.polys?`<path fill-rule="evenodd" class="${scaled?'shape':'ref'}" d="${g.polys.map(pl=>'M'+pth(pl)+'Z').join(' ')}"/>`:'';
+  (g.faces||[]).forEach(f=>{out+=`<path class="${scaled?'shape '+(f.s||''):'ref'}" d="M${pth(f.pts)}Z"/>`;});
+  (g.lines||[]).forEach(pl=>{out+=`<path class="edge" d="M${pth(pl)}"/>`;});
+  (g.hidden||[]).forEach(pl=>{out+=`<path class="tan dash" d="M${pth(pl)}"/>`;});
+  (g.dims||[]).forEach(([a,b])=>{const A=P(a),B=P(b);out+=`<line x1="${f1(A[0])}" y1="${f1(A[1])}" x2="${f1(B[0])}" y2="${f1(B[1])}" class="tan dash"/>`;});
+  const dp=u==='mm'?0:2,sym={t:'θ'};
+  g.labels.forEach(l=>{const [x,y]=P(l.at),val=raw[l.f],fd=d.f.find(f=>f[0]===l.f),ty=fd&&fd[3];
+    const txt=val==null?'?':ty==='ang'?fmt(val,val%1?2:0)+'°':ty==='int'?String(val):fmt(val,dp);
+    out+=`<text x="${f1(x+(l.dx||0))}" y="${f1(y+(l.dy||0)+4)}" text-anchor="${l.an||'middle'}" class="${val==null?'unk':'tk'}" data-f="${l.f}">${sym[l.f]||l.f} ${txt}</text>`;});
+  $(pre+'Svg').innerHTML=out;if($(pre+'SkNote'))$(pre+'SkNote').textContent=note+(scaled&&g.depth?' Depth shown at half scale (cabinet view).':'');
+}
+
+/* ---------- live volume sketches ---------- */
+const OBQ=[.5*Math.cos(Math.PI/6),.5*Math.sin(Math.PI/6)];        // cabinet oblique: depth recedes up-right at half scale
+const prj=p=>[p[0]+p[2]*OBQ[0],p[1]+p[2]*OBQ[1]];
+function poly3(V,F){ // convex solid -> visible faces + hidden edges
+  const C=V.reduce((t,p)=>[t[0]+p[0]/V.length,t[1]+p[1]/V.length,t[2]+p[2]/V.length],[0,0,0]);
+  const faces=[],eVis=new Set(),eAll=new Map();
+  F.forEach(f=>{const a=V[f[0]],b=V[f[1]],c=V[f[2]],u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],w=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+    let n=[u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]];
+    const fc=f.reduce((t,i)=>[t[0]+V[i][0]/f.length,t[1]+V[i][1]/f.length,t[2]+V[i][2]/f.length],[0,0,0]);
+    if(n[0]*(fc[0]-C[0])+n[1]*(fc[1]-C[1])+n[2]*(fc[2]-C[2])<0)n=n.map(x=>-x);
+    const vis=n[0]*OBQ[0]+n[1]*OBQ[1]-n[2]>1e-9,nl=Math.hypot(...n)||1;
+    f.forEach((i,j)=>{const k=f[(j+1)%f.length],key=Math.min(i,k)+'-'+Math.max(i,k);eAll.set(key,[i,k]);if(vis)eVis.add(key);});
+    if(vis)faces.push({pts:f.map(i=>prj(V[i])),s:n[1]/nl>.5?'s2':n[0]/nl>.5?'s3':''});});
+  return {faces,hidden:[...eAll].filter(([k])=>!eVis.has(k)).map(([,e])=>e.map(i=>prj(V[i]))),depth:true};
+}
+const half=(cx,cy,rx,ry,a0,a1,n=36)=>Array.from({length:n+1},(_,i)=>{const a=a0+(a1-a0)*i/n;return [cx+rx*Math.cos(a),cy+ry*Math.sin(a)];});
+const mx3=(...a)=>Math.max(0,...a.filter(x=>x!=null))||1;
+VOL.box.draw=v=>{const m=mx3(v.L,v.W,v.H),L=v.L??m,W=v.W??m*.6,H=v.H??m*.4;
+  const g=poly3([[0,0,0],[L,0,0],[L,H,0],[0,H,0],[0,0,W],[L,0,W],[L,H,W],[0,H,W]],[[0,1,2,3],[4,5,6,7],[0,1,5,4],[3,2,6,7],[0,3,7,4],[1,2,6,5]]);
+  g.labels=[{f:'L',at:prj([L/2,0,0]),dy:18},{f:'W',at:prj([L,0,W/2]),dx:10,dy:8,an:'start'},{f:'H',at:prj([0,H/2,0]),dx:-10,an:'end'}];return g;};
+VOL.pyramid.draw=v=>{const m=mx3(v.L,v.W,v.H),L=v.L??m,W=v.W??m*.7,H=v.H??m*.8;
+  const g=poly3([[0,0,0],[L,0,0],[L,0,W],[0,0,W],[L/2,H,W/2]],[[0,1,2,3],[0,1,4],[1,2,4],[2,3,4],[3,0,4]]);
+  g.dims=[[prj([L/2,H,W/2]),prj([L/2,0,W/2])]];
+  g.labels=[{f:'L',at:prj([L/2,0,0]),dy:18},{f:'W',at:prj([L,0,W/2]),dx:10,dy:8,an:'start'},{f:'H',at:prj([L/4,H/2,W/4]),dx:-10,an:'end'}];return g;};
+VOL.prism.draw=v=>{const m=mx3(v.b,v.h,v.L),L=v.L??m,b=v.b??m*.35,h=v.h??m*.25;
+  const g=poly3([[0,0,0],[0,0,b],[0,h,b/2],[L,0,0],[L,0,b],[L,h,b/2]],[[0,1,2],[3,4,5],[0,3,4,1],[0,3,5,2],[1,4,5,2]]);
+  g.dims=[[prj([L,h,b/2]),prj([L,0,b/2])]];
+  g.labels=[{f:'L',at:prj([L/2,0,0]),dy:18},{f:'b',at:prj([L,0,b/2]),dx:12,dy:14,an:'start'},{f:'h',at:prj([L,h,b/2]),dx:8,dy:-8,an:'start'}];return g;};
+VOL.cyl.draw=v=>{const m=mx3(v.d,v.h),d=v.d??m*.6,h=v.h??m,rx=d/2,ry=rx*.3;
+  return {faces:[{pts:[[-rx,h],...half(0,0,rx,ry,Math.PI,2*Math.PI),[rx,h],...half(0,h,rx,ry,0,-Math.PI)]},{pts:half(0,h,rx,ry,0,2*Math.PI,72),s:'s2'}],
+    hidden:[half(0,0,rx,ry,0,Math.PI)],dims:[[[-rx,h],[rx,h]]],
+    labels:[{f:'d',at:[0,h+ry],dy:-10},{f:'h',at:[rx,h/2],dx:10,an:'start'}]};};
+VOL.cone.draw=v=>{const m=mx3(v.d,v.h),d=v.d??m,h=v.h??m*.7,rx=d/2,ry=rx*.3;
+  return {faces:[{pts:[[0,h],...half(0,0,rx,ry,Math.PI,2*Math.PI)]}],hidden:[half(0,0,rx,ry,0,Math.PI)],dims:[[[0,h],[0,0]],[[-rx,0],[rx,0]]],
+    labels:[{f:'d',at:[0,-ry],dy:18},{f:'h',at:[0,h/2],dx:8,an:'start'}]};};
+VOL.frustum.draw=v=>{const m=mx3(v.D,v.d,v.h),D=v.D??m,d=v.d??D*.6,h=v.h??m*.5,R=D/2,r=d/2,k=.3;
+  return {faces:[{pts:[[-r,h],...half(0,0,R,R*k,Math.PI,2*Math.PI),[r,h],...half(0,h,r,r*k,0,-Math.PI)]},{pts:half(0,h,r,r*k,0,2*Math.PI,72),s:'s2'}],
+    hidden:[half(0,0,R,R*k,0,Math.PI)],dims:[[[-r,h],[r,h]]],
+    labels:[{f:'D',at:[0,-R*k],dy:18},{f:'d',at:[0,h+r*k],dy:-10},{f:'h',at:[Math.max(R,r),h/2],dx:10,an:'start'}]};};
+VOL.sphere.draw=v=>{const r=(v.d??1)/2,ry=r*.3;
+  return {faces:[{pts:half(0,0,r,r,0,2*Math.PI,96)}],lines:[half(0,0,r,ry,Math.PI,2*Math.PI)],hidden:[half(0,0,r,ry,0,Math.PI)],dims:[[[-r,0],[r,0]]],
+    labels:[{f:'d',at:[0,0],dy:-8}]};};
+
 const UNITS={in:{f:0.0254,imp:1,a:'in'},ft:{f:0.3048,imp:1,a:'ft'},yd:{f:0.9144,imp:1,a:'yd'},mm:{f:0.001,a:'mm'},cm:{f:0.01,a:'cm'},m:{f:1,a:'m'}};
 const HINTS={in:'Inches. 5-1/2 or 5 1/2 = 5½″; 1-6 = 1′6″ = 18″; 1-6-1/2 = 18½″; or decimal.',ft:'Feet. Accepts 5-10 (5′10″), 6-4-1/2, or decimal feet.',yd:'Yards, decimal.',mm:'Millimetres, decimal.',cm:'Centimetres, decimal.',m:'Metres, decimal.'};
 function setupShapes(pre,DEF,isVol){
@@ -593,19 +684,23 @@ function setupShapes(pre,DEF,isVol){
     $(pre+'Fields').innerHTML=d.f.map(([k,l,def,t])=>{
       const id=`${pre}_${sel.value}_${k}`,val=store[id]??def;
       return `<label>${l}<input id="${id}" value="${val}" ${t?'inputmode="decimal"':''}></label>`;}).join('');
-    $(pre+'Svg').innerHTML=d.svg;
+    if(!d.draw)$(pre+'Svg').innerHTML=d.svg;
     $(pre+'Hint').textContent=HINTS[usel.value];
     calc();
   };
   const calc=()=>{
     const d=DEF[sel.value],u=usel.value,U=UNITS[u],v={};let bad=false;
-    d.f.forEach(([k,,,t])=>{const el=$(`${pre}_${sel.value}_${k}`);
+    const raw={},miss=[];let wrong=false;
+    d.f.forEach(([k,l,,t])=>{const el=$(`${pre}_${sel.value}_${k}`),blank=!el.value.trim();
       const x=t?Number(el.value):(u==='in'?parseIn(el.value):parseLen(el.value,u));
-      const good=Number.isFinite(x)&&x>0;el.classList.toggle('err',!good);if(!good)bad=true;v[k]=t?x:x*U.f;store[el.id]=el.value;});
+      const good=!blank&&Number.isFinite(x)&&x>0;el.classList.toggle('err',!good&&!blank);
+      if(!good){bad=true;miss.push(l.toLowerCase());if(!blank)wrong=true;}
+      raw[k]=good?x:null;v[k]=t?x:x*U.f;store[el.id]=el.value;});
     save();
-    const out=$(pre+'Res');
-    if(bad){out.innerHTML=msg('Enter a positive value in each field.');return;}
-    const r=d.c(v);if(r.err){out.innerHTML=msg(r.err);return;}
+    const out=$(pre+'Res'),sk=n=>{if(d.draw)drawShape(pre,d,raw,u,n);};
+    if(bad){out.innerHTML=wrong?msg('Enter a positive value in each field.'):`<p class="hint">Enter ${miss.join(', ')}.</p>`;
+      sk('Not to scale — enter '+miss.join(', ')+'.');return;}
+    const r=d.c(v);if(r.err){out.innerHTML=msg(r.err);sk(r.err);return;}
     const rows=[];
     if(!isVol){
       const A=r.A; // m²
@@ -626,6 +721,7 @@ function setupShapes(pre,DEF,isVol){
       if(wOk&&w>0){const k=1+w/100;rows.push('-',[`+${fmt(w,w%1?1:0)}% waste`,U.imp?fmt(V/0.764554857984*k,2)+' yd³':fmt(V*k,3)+' m³']);}
     }
     out.innerHTML=resList(rows);
+    sk('Drawn to scale.');
   };
   sel.addEventListener('change',()=>{store[pre+'Shape']=sel.value;save();build();});
   usel.addEventListener('change',()=>{store[pre+'Unit']=usel.value;save();build();});
@@ -777,7 +873,9 @@ $('hcRes').addEventListener('click',e=>{const b=e.target.closest('[data-sol]');i
 $('hcShopInt').addEventListener('change',()=>{store['hcShopInt_'+$('hcUnit').value]=$('hcShopInt').value;save();calcHC();});
 ['hcK1','hcK2','hcV1','hcV2'].forEach(id=>$(id).addEventListener('change',()=>{store.hcSol=0;}));
 setupShapes('ar',AREA,false);
+$('arSvg').addEventListener('click',e=>{const t=e.target.closest('[data-f]');if(!t)return;const el=$('ar_'+$('arShape').value+'_'+t.dataset.f);if(el){el.focus();el.select();}});
 setupShapes('vo',VOL,true);
+$('voSvg').addEventListener('click',e=>{const t=e.target.closest('[data-f]');if(!t)return;const el=$('vo_'+$('voShape').value+'_'+t.dataset.f);if(el){el.focus();el.select();}});
 calcHC();calcVC();
 
 const hostTheme=document.documentElement.getAttribute('data-theme');
