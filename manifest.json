@@ -1,4 +1,7 @@
 {
+  "id": "/curvesNshapes/",
+  "start_url": "/curvesNshapes/",
+  "scope": "/curvesNshapes/",
   "name": "curvesNshapes",
   "short_name": "curvesNshapes",
   "description": "Horizontal and vertical curve solver, triangle solver, and area and volume calculator.",
