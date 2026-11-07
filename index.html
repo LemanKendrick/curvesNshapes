@@ -130,7 +130,7 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
 <body>
 
 <header class="top"><div class="wrap">
-  <div class="brand"><span class="mark">curves<b>N</b>shapes</span><span class="beta" id="appVer">v2</span></div>
+  <div class="brand"><span class="mark">curves<b>N</b>shapes</span><span class="beta" id="appVer">v3</span></div>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="hcurve">H-Curve</button>
     <button role="tab" data-tab="vcurve">V-Curve</button>
@@ -256,6 +256,7 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
 
 <!-- TRIANGLE -->
 <section class="panel" id="p-triangle" hidden>
+  <div class="card trsk"><h3>Sketch</h3><svg class="sk" id="trSvg" viewBox="0 0 400 280" role="img" aria-label="Triangle sketch"></svg><p class="hint" id="trSkNote"></p></div>
   <div class="grid">
     <form class="card fields" onsubmit="return false">
       <h2>Triangle</h2>
@@ -270,19 +271,18 @@ footer{color:var(--muted);font-size:.8rem;padding-block:0 32px}
       <p class="hint" id="trHint">Enter any three values, including at least one side. Side a is opposite angle A. Tap a label on the sketch to jump to its field.</p>
     </form>
     <div class="out trout">
-      <div class="card trsk"><h3>Sketch</h3><svg class="sk" id="trSvg" viewBox="0 0 400 280" role="img" aria-label="Triangle sketch"></svg><p class="hint" id="trSkNote"></p></div>
       <div class="card"><h3>Results</h3><div id="trRes"></div></div>
     </div>
   </div>
 </section>
 
 </main>
-<footer class="wrap"><span id="appVerFoot">curvesNshapes v2</span> · inputs are saved on this device · feet-inch entry: 5-10 or 6-4-1/2</footer>
+<footer class="wrap"><span id="appVerFoot">curvesNshapes v3</span> · inputs are saved on this device · feet-inch entry: 5-10 or 6-4-1/2</footer>
 
 <script>
 const $=id=>document.getElementById(id);
 /* App version: change here, and set the same number in sw.js (cns-vN) */
-const APP_VERSION='2';
+const APP_VERSION='3';
 $('appVer').textContent='v'+APP_VERSION;$('appVerFoot').textContent='curvesNshapes v'+APP_VERSION;
 const D2R=Math.PI/180;
 const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
